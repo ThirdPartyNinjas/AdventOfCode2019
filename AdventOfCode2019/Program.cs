@@ -35,6 +35,7 @@ namespace AdventOfCode2019
                                 positions.Add((x, y, steps));
                             }
                             break;
+
                         case 'L':
                             step *= -1;
                             goto case 'R';
@@ -99,6 +100,7 @@ namespace AdventOfCode2019
                                 positions.Add((x, y));
                             }
                             break;
+
                         case 'L':
                             step *= -1;
                             goto case 'R';
@@ -120,9 +122,9 @@ namespace AdventOfCode2019
                 var positionsB = GetPositions(file.ReadLine().Split(','));
 
                 int minimumDistance = int.MaxValue;
-                foreach(var a in positionsA)
+                foreach (var a in positionsA)
                 {
-                    foreach(var b in positionsB)
+                    foreach (var b in positionsB)
                     {
                         if (a == b)
                         {
@@ -179,7 +181,7 @@ namespace AdventOfCode2019
                 else
                 {
                     noun++;
-                    if(noun > 99)
+                    if (noun > 99)
                     {
                         noun = 0;
                         verb++;
@@ -202,13 +204,13 @@ namespace AdventOfCode2019
 
             int currentPosition = 0;
 
-            while(input[currentPosition] != 99)
+            while (input[currentPosition] != 99)
             {
-                if(input[currentPosition] == 1)
+                if (input[currentPosition] == 1)
                 {
                     input[input[currentPosition + 3]] = input[input[currentPosition + 1]] + input[input[currentPosition + 2]];
                 }
-                else if(input[currentPosition] == 2)
+                else if (input[currentPosition] == 2)
                 {
                     input[input[currentPosition + 3]] = input[input[currentPosition + 1]] * input[input[currentPosition + 2]];
                 }
