@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace AdventOfCode2019
@@ -7,7 +8,135 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day02b();
+            Day03b();
+        }
+
+        private static void Day03b()
+        {
+            List<(int x, int y, int steps)> GetPositions(string[] instructions)
+            {
+                int x = 0, y = 0, steps = 0;
+                List<(int x, int y, int steps)> positions = new List<(int x, int y, int steps)>();
+
+                foreach (var instruction in instructions)
+                {
+                    int distance = int.Parse(instruction.Substring(1));
+                    int step = 1;
+                    switch (instruction[0])
+                    {
+                        case 'U':
+                            step = -1;
+                            goto case 'D';
+                        case 'D':
+                            for (int i = 0; i < distance; i++)
+                            {
+                                y += step;
+                                steps++;
+                                positions.Add((x, y, steps));
+                            }
+                            break;
+                        case 'L':
+                            step *= -1;
+                            goto case 'R';
+                        case 'R':
+                            for (int i = 0; i < distance; i++)
+                            {
+                                x += step;
+                                steps++;
+                                positions.Add((x, y, steps));
+                            }
+                            break;
+                    }
+                }
+                return positions;
+            }
+
+            using (var file = File.OpenText("Input/day03.txt"))
+            {
+                var positionsA = GetPositions(file.ReadLine().Split(','));
+                var positionsB = GetPositions(file.ReadLine().Split(','));
+
+                int minimumSteps = int.MaxValue;
+                foreach (var a in positionsA)
+                {
+                    foreach (var b in positionsB)
+                    {
+                        if (a.x == b.x && a.y == b.y)
+                        {
+                            int combinedSteps = a.steps + b.steps;
+                            if (combinedSteps < minimumSteps)
+                            {
+                                minimumSteps = combinedSteps;
+                            }
+                        }
+                    }
+                }
+
+                Console.WriteLine($"Day 3b: {minimumSteps}");
+            }
+        }
+
+        private static void Day03a()
+        {
+            List<(int x, int y)> GetPositions(string[] instructions)
+            {
+                int x = 0, y = 0;
+                List<(int x, int y)> positions = new List<(int x, int y)>();
+
+                foreach (var instruction in instructions)
+                {
+                    int distance = int.Parse(instruction.Substring(1));
+                    int step = 1;
+                    switch (instruction[0])
+                    {
+                        case 'U':
+                            step = -1;
+                            goto case 'D';
+                        case 'D':
+                            for (int i = 0; i < distance; i++)
+                            {
+                                y += step;
+                                positions.Add((x, y));
+                            }
+                            break;
+                        case 'L':
+                            step *= -1;
+                            goto case 'R';
+                        case 'R':
+                            for (int i = 0; i < distance; i++)
+                            {
+                                x += step;
+                                positions.Add((x, y));
+                            }
+                            break;
+                    }
+                }
+                return positions;
+            }
+
+            using (var file = File.OpenText("Input/day03.txt"))
+            {
+                var positionsA = GetPositions(file.ReadLine().Split(','));
+                var positionsB = GetPositions(file.ReadLine().Split(','));
+
+                int minimumDistance = int.MaxValue;
+                foreach(var a in positionsA)
+                {
+                    foreach(var b in positionsB)
+                    {
+                        if (a == b)
+                        {
+                            int distance = Math.Abs(a.x) + Math.Abs(a.y);
+                            if (distance < minimumDistance)
+                            {
+                                minimumDistance = distance;
+                            }
+                        }
+                    }
+                }
+
+                Console.WriteLine($"Day 3a: {minimumDistance}");
+            }
         }
 
         private static void Day02b()
@@ -58,7 +187,7 @@ namespace AdventOfCode2019
                 }
             } while (true);
 
-            Console.WriteLine($"Day 2a: {100 * noun + verb}");
+            Console.WriteLine($"Day 2b: {100 * noun + verb}");
         }
 
         private static void Day02a()
