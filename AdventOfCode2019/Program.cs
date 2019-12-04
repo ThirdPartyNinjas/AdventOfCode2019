@@ -8,7 +8,92 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day03b();
+            Day04b();
+        }
+
+        private static void Day04b()
+        {
+            bool ContainsDouble(string s)
+            {
+                for (int i = 0; i < s.Length - 1; i++)
+                {
+                    if (s[i] == s[i + 1])
+                    {
+                        if (s.Length > i + 2)
+                        {
+                            if (s[i + 2] == s[i])
+                                continue;
+                        }
+                        if (i > 0)
+                        {
+                            if (s[i - 1] == s[i])
+                                continue;
+                        }
+
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            bool Increasing(string s)
+            {
+                for (int i = 0; i < s.Length - 1; i++)
+                {
+                    if (s[i] > s[i + 1])
+                        return false;
+                }
+                return true;
+            }
+
+            int count = 0;
+
+            for (int i = 138307; i <= 654504; i++)
+            {
+                var s = i.ToString();
+                if (ContainsDouble(s) && Increasing(s))
+                {
+                    count++;
+                }
+            }
+
+            Console.WriteLine($"Day 4b: {count}");
+        }
+
+        private static void Day04a()
+        {
+            bool ContainsDouble(string s)
+            {
+                for (int i = 0; i < s.Length - 1; i++)
+                {
+                    if (s[i] == s[i + 1])
+                        return true;
+                }
+                return false;
+            }
+
+            bool Increasing(string s)
+            {
+                for (int i = 0; i < s.Length - 1; i++)
+                {
+                    if (s[i] > s[i + 1])
+                        return false;
+                }
+                return true;
+            }
+
+            int count = 0;
+
+            for (int i = 138307; i <= 654504; i++)
+            {
+                var s = i.ToString();
+                if (ContainsDouble(s) && Increasing(s))
+                {
+                    count++;
+                }
+            }
+
+            Console.WriteLine($"Day 4a: {count}");
         }
 
         private static void Day03b()
