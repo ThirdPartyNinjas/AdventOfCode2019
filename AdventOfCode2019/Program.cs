@@ -8,7 +8,113 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day04b();
+            Day05();
+        }
+
+        private static void Day05()
+        {
+            List<int> input = new List<int>();
+            using (var file = File.OpenText("Input/day05.txt"))
+            {
+                string line = file.ReadLine();
+                var strings = line.Split(',');
+                foreach (var s in strings)
+                    input.Add(int.Parse(s));
+            }
+
+            List<int> program = input;
+            int instructionPointer = 0;
+            bool terminate = false;
+            do
+            {
+                int instruction = program[instructionPointer];
+                int opCode = instruction % 100;
+                instruction /= 100;
+                int parameterModeA = instruction % 10;
+                instruction /= 10;
+                int parameterModeB = instruction % 10;
+                instruction /= 10;
+                int parameterModeC = instruction % 10;
+
+                int parameterA, parameterB, parameterC;
+
+                switch (opCode)
+                {
+                    case 1: // Add
+                        parameterA = (parameterModeA == 1) ? program[instructionPointer + 1] : program[program[instructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? program[instructionPointer + 2] : program[program[instructionPointer + 2]];
+                        parameterC = program[instructionPointer + 3];
+                        program[parameterC] = parameterA + parameterB;
+                        instructionPointer += 4;
+                        break;
+
+                    case 2: // Multiply
+                        parameterA = (parameterModeA == 1) ? program[instructionPointer + 1] : program[program[instructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? program[instructionPointer + 2] : program[program[instructionPointer + 2]];
+                        parameterC = program[instructionPointer + 3];
+                        program[parameterC] = parameterA * parameterB;
+                        instructionPointer += 4;
+                        break;
+
+                    case 3: // Input
+                        parameterA = program[instructionPointer + 1];
+                        do
+                        {
+                            Console.Write($"Input: ");
+                            var inputString = Console.ReadLine();
+                            if (!int.TryParse(inputString, out int inputValue))
+                                continue;
+                            program[parameterA] = inputValue;
+                        } while (false);
+                        instructionPointer += 2;
+                        break;
+
+                    case 4: // Output
+                        parameterA = (parameterModeA == 1) ? program[instructionPointer + 1] : program[program[instructionPointer + 1]];
+                        Console.WriteLine($"Output: {parameterA}");
+                        instructionPointer += 2;
+                        break;
+
+                    case 5: // Jump if true
+                        parameterA = (parameterModeA == 1) ? program[instructionPointer + 1] : program[program[instructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? program[instructionPointer + 2] : program[program[instructionPointer + 2]];
+                        if (parameterA != 0)
+                            instructionPointer = parameterB;
+                        else
+                            instructionPointer += 3;
+                        break;
+
+                    case 6: // Jump if false
+                        parameterA = (parameterModeA == 1) ? program[instructionPointer + 1] : program[program[instructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? program[instructionPointer + 2] : program[program[instructionPointer + 2]];
+                        if (parameterA == 0)
+                            instructionPointer = parameterB;
+                        else
+                            instructionPointer += 3;
+                        break;
+
+                    case 7: // Less than
+                        parameterA = (parameterModeA == 1) ? program[instructionPointer + 1] : program[program[instructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? program[instructionPointer + 2] : program[program[instructionPointer + 2]];
+                        parameterC = program[instructionPointer + 3];
+                        program[parameterC] = (parameterA < parameterB) ? 1 : 0;
+                        instructionPointer += 4;
+                        break;
+
+                    case 8: // Equals
+                        parameterA = (parameterModeA == 1) ? program[instructionPointer + 1] : program[program[instructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? program[instructionPointer + 2] : program[program[instructionPointer + 2]];
+                        parameterC = program[instructionPointer + 3];
+                        program[parameterC] = (parameterA == parameterB) ? 1 : 0;
+                        instructionPointer += 4;
+                        break;
+
+                    case 99: // Terminate
+                        Console.WriteLine("Program terminated");
+                        terminate = true;
+                        break;
+                }
+            } while (!terminate);
         }
 
         private static void Day04b()
