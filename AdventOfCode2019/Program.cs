@@ -8,7 +8,104 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day05();
+            Day06();
+        }
+
+        public class OrbitNode
+        {
+            public OrbitNode DirectOrbit { get; set; }
+            public string Name { get; set; }
+        }
+
+        private static void Day06()
+        {
+            Dictionary<string, OrbitNode> orbitNodes = new Dictionary<string, OrbitNode>();
+
+            using (var file = File.OpenText("Input/day06.txt"))
+            {
+                string line;
+                while ((line = file.ReadLine()) != null)
+                {
+                    var strings = line.Split(')');
+
+                    // if the named nodes aren't already in the dictionary, go ahead and create them
+                    // then hook up the direct orbit we just learned about
+                    if (!orbitNodes.ContainsKey(strings[0]))
+                        orbitNodes[strings[0]] = new OrbitNode() { Name = strings[0] };
+                    if (!orbitNodes.ContainsKey(strings[1]))
+                        orbitNodes[strings[1]] = new OrbitNode() { Name = strings[1] };
+
+                    orbitNodes[strings[1]].DirectOrbit = orbitNodes[strings[0]];
+                }
+            }
+
+            int totalOrbits = 0;
+            foreach (var node in orbitNodes.Values)
+            {
+                var currentNode = node;
+                do
+                {
+                    currentNode = currentNode.DirectOrbit;
+                    if (currentNode == null)
+                        break;
+                    totalOrbits++;
+                } while (true);
+            }
+
+            Console.WriteLine($"Day 6a: {totalOrbits}");
+
+            // we only have a one directional graph, there's no way to look up orbit chains
+            // instead we're going to search from back the "YOU" node until we find a node that's in the "SAN"
+            // node's path toward "COM" Once we're there, we just add up the number of jumps it took to reach
+            // that shared node
+
+            List<OrbitNode> youList = new List<OrbitNode>();
+            {
+                var currentNode = orbitNodes["YOU"];
+                do
+                {
+                    currentNode = currentNode.DirectOrbit;
+                    if (currentNode == null)
+                        break;
+                    youList.Add(currentNode);
+                } while (true);
+            }
+
+            List<OrbitNode> santaList = new List<OrbitNode>();
+            {
+                var currentNode = orbitNodes["SAN"];
+                do
+                {
+                    currentNode = currentNode.DirectOrbit;
+                    if (currentNode == null)
+                        break;
+                    santaList.Add(currentNode);
+                } while (true);
+            }
+
+            string sharedNode = "";
+            int youCount = 0;
+            foreach (var node in youList)
+            {
+                if (santaList.Find(n => n.Name == node.Name) != null)
+                {
+                    sharedNode = node.Name;
+                    break;
+                }
+                youCount++;
+            }
+
+            int santaCount = 0;
+            foreach (var node in santaList)
+            {
+                if (node.Name == sharedNode)
+                {
+                    break;
+                }
+                santaCount++;
+            }
+
+            Console.WriteLine($"Day 6b: {youCount + santaCount}");
         }
 
         private static void Day05()
