@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace AdventOfCode2019
 {
@@ -8,7 +9,308 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day06();
+            Day07b();
+        }
+
+        private static IEnumerable<IEnumerable<T>>
+            GetPermutations<T>(IEnumerable<T> list, int length)
+        {
+            if (length == 1) return list.Select(t => new T[] { t });
+
+            return GetPermutations(list, length - 1)
+                .SelectMany(t => list.Where(e => !t.Contains(e)),
+                    (t1, t2) => t1.Concat(new T[] { t2 }));
+        }
+
+        private class Amplifier
+        {
+            public List<int> Program { get; set; }
+            public Amplifier InputSource { get; set; }
+            public List<int> Outputs { get; set; } = new List<int>();
+            public int InstructionPointer { get; set; } = 0;
+        }
+
+        private static bool RunProgram07b(Amplifier amplifier)
+        {
+            bool terminate = false;
+            do
+            {
+                int instruction = amplifier.Program[amplifier.InstructionPointer];
+                int opCode = instruction % 100;
+                instruction /= 100;
+                int parameterModeA = instruction % 10;
+                instruction /= 10;
+                int parameterModeB = instruction % 10;
+                instruction /= 10;
+                int parameterModeC = instruction % 10;
+
+                int parameterA, parameterB, parameterC;
+
+                switch (opCode)
+                {
+                    case 1: // Add
+                        parameterA = (parameterModeA == 1) ? amplifier.Program[amplifier.InstructionPointer + 1] : amplifier.Program[amplifier.Program[amplifier.InstructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? amplifier.Program[amplifier.InstructionPointer + 2] : amplifier.Program[amplifier.Program[amplifier.InstructionPointer + 2]];
+                        parameterC = amplifier.Program[amplifier.InstructionPointer + 3];
+                        amplifier.Program[parameterC] = parameterA + parameterB;
+                        amplifier.InstructionPointer += 4;
+                        break;
+
+                    case 2: // Multiply
+                        parameterA = (parameterModeA == 1) ? amplifier.Program[amplifier.InstructionPointer + 1] : amplifier.Program[amplifier.Program[amplifier.InstructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? amplifier.Program[amplifier.InstructionPointer + 2] : amplifier.Program[amplifier.Program[amplifier.InstructionPointer + 2]];
+                        parameterC = amplifier.Program[amplifier.InstructionPointer + 3];
+                        amplifier.Program[parameterC] = parameterA * parameterB;
+                        amplifier.InstructionPointer += 4;
+                        break;
+
+                    case 3: // Input
+                        parameterA = amplifier.Program[amplifier.InstructionPointer + 1];
+                        if (amplifier.InputSource.Outputs.Count == 0)
+                            return false;
+                        amplifier.Program[parameterA] = amplifier.InputSource.Outputs[0];
+                        amplifier.InputSource.Outputs.RemoveAt(0);
+                        amplifier.InstructionPointer += 2;
+                        break;
+
+                    case 4: // Output
+                        parameterA = (parameterModeA == 1) ? amplifier.Program[amplifier.InstructionPointer + 1] : amplifier.Program[amplifier.Program[amplifier.InstructionPointer + 1]];
+                        amplifier.Outputs.Add(parameterA);
+                        amplifier.InstructionPointer += 2;
+                        break;
+
+                    case 5: // Jump if true
+                        parameterA = (parameterModeA == 1) ? amplifier.Program[amplifier.InstructionPointer + 1] : amplifier.Program[amplifier.Program[amplifier.InstructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? amplifier.Program[amplifier.InstructionPointer + 2] : amplifier.Program[amplifier.Program[amplifier.InstructionPointer + 2]];
+                        if (parameterA != 0)
+                            amplifier.InstructionPointer = parameterB;
+                        else
+                            amplifier.InstructionPointer += 3;
+                        break;
+
+                    case 6: // Jump if false
+                        parameterA = (parameterModeA == 1) ? amplifier.Program[amplifier.InstructionPointer + 1] : amplifier.Program[amplifier.Program[amplifier.InstructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? amplifier.Program[amplifier.InstructionPointer + 2] : amplifier.Program[amplifier.Program[amplifier.InstructionPointer + 2]];
+                        if (parameterA == 0)
+                            amplifier.InstructionPointer = parameterB;
+                        else
+                            amplifier.InstructionPointer += 3;
+                        break;
+
+                    case 7: // Less than
+                        parameterA = (parameterModeA == 1) ? amplifier.Program[amplifier.InstructionPointer + 1] : amplifier.Program[amplifier.Program[amplifier.InstructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? amplifier.Program[amplifier.InstructionPointer + 2] : amplifier.Program[amplifier.Program[amplifier.InstructionPointer + 2]];
+                        parameterC = amplifier.Program[amplifier.InstructionPointer + 3];
+                        amplifier.Program[parameterC] = (parameterA < parameterB) ? 1 : 0;
+                        amplifier.InstructionPointer += 4;
+                        break;
+
+                    case 8: // Equals
+                        parameterA = (parameterModeA == 1) ? amplifier.Program[amplifier.InstructionPointer + 1] : amplifier.Program[amplifier.Program[amplifier.InstructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? amplifier.Program[amplifier.InstructionPointer + 2] : amplifier.Program[amplifier.Program[amplifier.InstructionPointer + 2]];
+                        parameterC = amplifier.Program[amplifier.InstructionPointer + 3];
+                        amplifier.Program[parameterC] = (parameterA == parameterB) ? 1 : 0;
+                        amplifier.InstructionPointer += 4;
+                        break;
+
+                    case 99: // Terminate
+                        terminate = true;
+                        break;
+                }
+            } while (!terminate);
+
+            return true;
+        }
+
+        private static void Day07b()
+        {
+            List<int> input = new List<int>();
+            using (var file = File.OpenText("Input/day07.txt"))
+            {
+                string line = file.ReadLine();
+                var strings = line.Split(',');
+                foreach (var s in strings)
+                    input.Add(int.Parse(s));
+            }
+
+            List<int> set = new List<int> { 5, 6, 7, 8, 9 };
+            var permutations = GetPermutations(set, 5);
+
+            int maxOutput = int.MinValue;
+            foreach (var p in permutations)
+            {
+                List<int> permutationList = new List<int>(p);
+
+                Amplifier ampA = new Amplifier();
+                Amplifier ampB = new Amplifier();
+                Amplifier ampC = new Amplifier();
+                Amplifier ampD = new Amplifier();
+                Amplifier ampE = new Amplifier();
+
+                ampA.InputSource = ampE;
+                ampA.Program = new List<int>(input);
+                ampA.Outputs.Add(permutationList[1]);
+
+                ampB.InputSource = ampA;
+                ampB.Program = new List<int>(input);
+                ampB.Outputs.Add(permutationList[2]);
+
+                ampC.InputSource = ampB;
+                ampC.Program = new List<int>(input);
+                ampC.Outputs.Add(permutationList[3]);
+
+                ampD.InputSource = ampC;
+                ampD.Program = new List<int>(input);
+                ampD.Outputs.Add(permutationList[4]);
+
+                ampE.InputSource = ampD;
+                ampE.Program = new List<int>(input);
+                ampE.Outputs.Add(permutationList[0]);
+                ampE.Outputs.Add(0);
+
+                do
+                {
+                    RunProgram07b(ampA);
+                    RunProgram07b(ampB);
+                    RunProgram07b(ampC);
+                    RunProgram07b(ampD);
+                    if(RunProgram07b(ampE) == true)
+                    {
+                        break;
+                    }
+                } while (true);
+
+                if (ampE.Outputs[0] > maxOutput)
+                    maxOutput = ampE.Outputs[0];
+            }
+
+            Console.WriteLine($"Day 7b: {maxOutput}");
+        }
+
+        private static int RunProgram07(List<int> input, List<int> inputs)
+        {
+            int inputCounter = 0;
+            int output = 0;
+
+            List<int> program = new List<int>(input);
+            int instructionPointer = 0;
+            bool terminate = false;
+            do
+            {
+                int instruction = program[instructionPointer];
+                int opCode = instruction % 100;
+                instruction /= 100;
+                int parameterModeA = instruction % 10;
+                instruction /= 10;
+                int parameterModeB = instruction % 10;
+                instruction /= 10;
+                int parameterModeC = instruction % 10;
+
+                int parameterA, parameterB, parameterC;
+
+                switch (opCode)
+                {
+                    case 1: // Add
+                        parameterA = (parameterModeA == 1) ? program[instructionPointer + 1] : program[program[instructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? program[instructionPointer + 2] : program[program[instructionPointer + 2]];
+                        parameterC = program[instructionPointer + 3];
+                        program[parameterC] = parameterA + parameterB;
+                        instructionPointer += 4;
+                        break;
+
+                    case 2: // Multiply
+                        parameterA = (parameterModeA == 1) ? program[instructionPointer + 1] : program[program[instructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? program[instructionPointer + 2] : program[program[instructionPointer + 2]];
+                        parameterC = program[instructionPointer + 3];
+                        program[parameterC] = parameterA * parameterB;
+                        instructionPointer += 4;
+                        break;
+
+                    case 3: // Input
+                        parameterA = program[instructionPointer + 1];
+                        program[parameterA] = inputs[inputCounter++];
+                        instructionPointer += 2;
+                        break;
+
+                    case 4: // Output
+                        parameterA = (parameterModeA == 1) ? program[instructionPointer + 1] : program[program[instructionPointer + 1]];
+                        output = parameterA;
+                        instructionPointer += 2;
+                        break;
+
+                    case 5: // Jump if true
+                        parameterA = (parameterModeA == 1) ? program[instructionPointer + 1] : program[program[instructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? program[instructionPointer + 2] : program[program[instructionPointer + 2]];
+                        if (parameterA != 0)
+                            instructionPointer = parameterB;
+                        else
+                            instructionPointer += 3;
+                        break;
+
+                    case 6: // Jump if false
+                        parameterA = (parameterModeA == 1) ? program[instructionPointer + 1] : program[program[instructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? program[instructionPointer + 2] : program[program[instructionPointer + 2]];
+                        if (parameterA == 0)
+                            instructionPointer = parameterB;
+                        else
+                            instructionPointer += 3;
+                        break;
+
+                    case 7: // Less than
+                        parameterA = (parameterModeA == 1) ? program[instructionPointer + 1] : program[program[instructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? program[instructionPointer + 2] : program[program[instructionPointer + 2]];
+                        parameterC = program[instructionPointer + 3];
+                        program[parameterC] = (parameterA < parameterB) ? 1 : 0;
+                        instructionPointer += 4;
+                        break;
+
+                    case 8: // Equals
+                        parameterA = (parameterModeA == 1) ? program[instructionPointer + 1] : program[program[instructionPointer + 1]];
+                        parameterB = (parameterModeB == 1) ? program[instructionPointer + 2] : program[program[instructionPointer + 2]];
+                        parameterC = program[instructionPointer + 3];
+                        program[parameterC] = (parameterA == parameterB) ? 1 : 0;
+                        instructionPointer += 4;
+                        break;
+
+                    case 99: // Terminate
+                        Console.WriteLine("Program terminated");
+                        terminate = true;
+                        break;
+                }
+            } while (!terminate);
+
+            return output;
+        }
+
+        private static void Day07a()
+        {
+            List<int> input = new List<int>();
+            using (var file = File.OpenText("Input/day07.txt"))
+            {
+                string line = file.ReadLine();
+                var strings = line.Split(',');
+                foreach (var s in strings)
+                    input.Add(int.Parse(s));
+            }
+
+            List<int> set = new List<int> { 0, 1, 2, 3, 4 };
+            var permutations = GetPermutations(set, 5);
+
+            int maxOutput = int.MinValue;
+            foreach (var p in permutations)
+            {
+                List<int> permutationList = new List<int>(p);
+                int data = 0;
+                for (int i = 0; i < 5; i++)
+                {
+                    int phase = permutationList[i];
+                    data = RunProgram07(input, new List<int>() { phase, data });
+                }
+                if (data > maxOutput)
+                    maxOutput = data;
+            }
+
+            Console.WriteLine($"Day 7a: {maxOutput}");
         }
 
         public class OrbitNode
