@@ -9,11 +9,112 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day07b();
+            Day08a();
+        }
+
+        private static void Day08a()
+        {
+            int minimumIndex;
+            int minimumZeros = int.MaxValue;
+            int minimumOnes = 0;
+            int minimumTwos = 0;
+
+            List<int[]> layers = new List<int[]>();
+
+            using (var file = File.OpenText("Input/day08.txt"))
+            {
+                string line;
+                int offset = 0;
+                while ((line = file.ReadLine()) != null)
+                {
+                    for(int i=0; i<100; i++)
+                    {
+                        int zeroes = 0;
+                        int ones = 0;
+                        int twos = 0;
+
+                        int[] layer = new int[25 * 6];
+
+                        for (int y=0; y<6; y++)
+                        {
+                            for(int x=0; x<25; x++)
+                            {
+                                int pixel = line[offset++] - '0';
+                                layer[y * 25 + x] = pixel;
+                                if(pixel == 0)
+                                    zeroes++;
+                                if (pixel == 1)
+                                    ones++;
+                                if (pixel == 2)
+                                    twos++;
+                            }
+                        }
+
+                        layers.Add(layer);
+
+                        if(zeroes < minimumZeros)
+                        {
+                            minimumIndex = i;
+                            minimumZeros = zeroes;
+                            minimumOnes = ones;
+                            minimumTwos = twos;
+                        }
+
+                    }
+                }
+            }
+
+            Console.WriteLine("8a: " + (minimumOnes * minimumTwos));
+
+            int[] final = new int[25 * 6];
+            for (int y = 0; y < 6; y++)
+            {
+                for (int x = 0; x < 25; x++)
+                {
+                    final[y * 25 + x] = 2;
+                }
+            }
+
+
+            for (int i=0; i<layers.Count; i++)
+            {
+                for(int y=0; y<6; y++)
+                {
+                    for (int x = 0; x < 25; x++)
+                    {
+                        if(final[y * 25 +x] == 2)
+                        {
+                            final[y * 25 + x] = layers[i][y * 25 + x];
+                        }
+                    }
+                }
+            }
+
+            for (int y = 0; y < 6; y++)
+            {
+                for (int x = 0; x < 25; x++)
+                {
+                    switch(final[y * 25 + x])
+                    {
+                        case 0:
+                            Console.Write("X");
+                            break;
+
+                        case 1:
+                            Console.Write(" ");
+                            break;
+
+                        case 2:
+                            Console.Write(" ");
+                            break;
+                    }
+                }
+                Console.WriteLine("");
+            }
         }
 
         private static IEnumerable<IEnumerable<T>>
-            GetPermutations<T>(IEnumerable<T> list, int length)
+    GetPermutations<T>(IEnumerable<T> list, int length)
         {
             if (length == 1) return list.Select(t => new T[] { t });
 
