@@ -10,30 +10,48 @@ namespace AdventOfCode2019
 
     public class IntcodeMachine
     {
-        public delegate bool InputAction(out int input);
+        const int MemorySize = 10000;
 
-        public IntcodeMachine(int[] program, InputAction inputAction, Action<int> outputAction)
+        public delegate bool InputAction(out long input);
+
+        public IntcodeMachine(long[] program, InputAction inputAction, Action<long> outputAction)
         {
-            this.program = (int[])program.Clone();
+            this.program = (long[])program.Clone();
             this.inputAction = inputAction;
             this.outputAction = outputAction;
+            memory = new long[MemorySize];
             ResetProgram();
         }
 
         public void ResetProgram()
         {
             instructionPointer = 0;
-            memory = (int[])program.Clone();
+            relativeBase = 0;
+            Array.Copy(program, 0, memory, 0, program.Length);
+            for (int i = program.Length; i < memory.Length; i++)
+            {
+                memory[i] = 0;
+            }
         }
 
-        public int ReadMemoryValue(int index)
+        public long GetMemoryValue(int index)
         {
             return memory[index];
         }
 
-        public void WriteMemoryValue(int index, int value)
+        public void SetMemoryValue(int index, long value)
         {
             memory[index] = value;
+        }
+
+        public void SetInputAction(InputAction inputAction)
+        {
+            this.inputAction = inputAction;
+        }
+
+        public void SetOutputAction(Action<long> outputAction)
+        {
+            this.outputAction = outputAction;
         }
 
         public IntcodeRunState RunProgram()
@@ -41,81 +59,87 @@ namespace AdventOfCode2019
             bool terminate = false;
             do
             {
-                int instruction = memory[instructionPointer];
-                int opCode = instruction % 100;
+                long instruction = memory[instructionPointer];
+                long opCode = instruction % 100;
                 instruction /= 100;
-                int parameterModeA = instruction % 10;
+                long parameterModeA = instruction % 10;
                 instruction /= 10;
-                int parameterModeB = instruction % 10;
+                long parameterModeB = instruction % 10;
                 instruction /= 10;
-                int parameterModeC = instruction % 10;
+                long parameterModeC = instruction % 10;
 
-                int parameterA, parameterB, parameterC;
+                long parameterAddressA, parameterAddressB, parameterAddressC;
 
                 switch (opCode)
                 {
                     case 1: // Add
-                        parameterA = (parameterModeA == 1) ? memory[instructionPointer + 1] : memory[memory[instructionPointer + 1]];
-                        parameterB = (parameterModeB == 1) ? memory[instructionPointer + 2] : memory[memory[instructionPointer + 2]];
-                        parameterC = memory[instructionPointer + 3];
-                        memory[parameterC] = parameterA + parameterB;
+                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
+                        parameterAddressB = GetParameterAddress(parameterModeB, instructionPointer + 2);
+                        parameterAddressC = GetParameterAddress(parameterModeC, instructionPointer + 3);
+                        memory[parameterAddressC] = memory[parameterAddressA] + memory[parameterAddressB];
                         instructionPointer += 4;
                         break;
 
                     case 2: // Multiply
-                        parameterA = (parameterModeA == 1) ? memory[instructionPointer + 1] : memory[memory[instructionPointer + 1]];
-                        parameterB = (parameterModeB == 1) ? memory[instructionPointer + 2] : memory[memory[instructionPointer + 2]];
-                        parameterC = memory[instructionPointer + 3];
-                        memory[parameterC] = parameterA * parameterB;
+                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
+                        parameterAddressB = GetParameterAddress(parameterModeB, instructionPointer + 2);
+                        parameterAddressC = GetParameterAddress(parameterModeC, instructionPointer + 3);
+                        memory[parameterAddressC] = memory[parameterAddressA] * memory[parameterAddressB];
                         instructionPointer += 4;
                         break;
 
                     case 3: // Input
-                        parameterA = memory[instructionPointer + 1];
-                        if (!inputAction(out int input))
+                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
+                        if (!inputAction(out long input))
                             return IntcodeRunState.WaitingForInput;
-                        memory[parameterA] = input;
+                        memory[parameterAddressA] = input;
                         instructionPointer += 2;
                         break;
 
                     case 4: // Output
-                        parameterA = (parameterModeA == 1) ? memory[instructionPointer + 1] : memory[memory[instructionPointer + 1]];
-                        outputAction(parameterA);
+                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
+                        outputAction(memory[parameterAddressA]);
                         instructionPointer += 2;
                         break;
 
                     case 5: // Jump if true
-                        parameterA = (parameterModeA == 1) ? memory[instructionPointer + 1] : memory[memory[instructionPointer + 1]];
-                        parameterB = (parameterModeB == 1) ? memory[instructionPointer + 2] : memory[memory[instructionPointer + 2]];
-                        if (parameterA != 0)
-                            instructionPointer = parameterB;
+                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
+                        parameterAddressB = GetParameterAddress(parameterModeB, instructionPointer + 2);
+                        if (memory[parameterAddressA] != 0)
+                            instructionPointer = memory[parameterAddressB];
                         else
                             instructionPointer += 3;
                         break;
 
                     case 6: // Jump if false
-                        parameterA = (parameterModeA == 1) ? memory[instructionPointer + 1] : memory[memory[instructionPointer + 1]];
-                        parameterB = (parameterModeB == 1) ? memory[instructionPointer + 2] : memory[memory[instructionPointer + 2]];
-                        if (parameterA == 0)
-                            instructionPointer = parameterB;
+                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
+                        parameterAddressB = GetParameterAddress(parameterModeB, instructionPointer + 2);
+                        if (memory[parameterAddressA] == 0)
+                            instructionPointer = memory[parameterAddressB];
                         else
                             instructionPointer += 3;
                         break;
 
                     case 7: // Less than
-                        parameterA = (parameterModeA == 1) ? memory[instructionPointer + 1] : memory[memory[instructionPointer + 1]];
-                        parameterB = (parameterModeB == 1) ? memory[instructionPointer + 2] : memory[memory[instructionPointer + 2]];
-                        parameterC = memory[instructionPointer + 3];
-                        memory[parameterC] = (parameterA < parameterB) ? 1 : 0;
+                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
+                        parameterAddressB = GetParameterAddress(parameterModeB, instructionPointer + 2);
+                        parameterAddressC = GetParameterAddress(parameterModeC, instructionPointer + 3);
+                        memory[parameterAddressC] = (memory[parameterAddressA] < memory[parameterAddressB]) ? 1 : 0;
                         instructionPointer += 4;
                         break;
 
                     case 8: // Equals
-                        parameterA = (parameterModeA == 1) ? memory[instructionPointer + 1] : memory[memory[instructionPointer + 1]];
-                        parameterB = (parameterModeB == 1) ? memory[instructionPointer + 2] : memory[memory[instructionPointer + 2]];
-                        parameterC = memory[instructionPointer + 3];
-                        memory[parameterC] = (parameterA == parameterB) ? 1 : 0;
+                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
+                        parameterAddressB = GetParameterAddress(parameterModeB, instructionPointer + 2);
+                        parameterAddressC = GetParameterAddress(parameterModeC, instructionPointer + 3);
+                        memory[parameterAddressC] = (memory[parameterAddressA] == memory[parameterAddressB]) ? 1 : 0;
                         instructionPointer += 4;
+                        break;
+
+                    case 9: // Adjust relative base
+                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
+                        relativeBase += memory[parameterAddressA];
+                        instructionPointer += 2;
                         break;
 
                     case 99: // Terminate
@@ -127,10 +151,26 @@ namespace AdventOfCode2019
             return IntcodeRunState.Terminated;
         }
 
-        private int[] memory;
-        private int[] program;
-        private int instructionPointer;
+        private long GetParameterAddress(long parameterMode, long address)
+        {
+            switch(parameterMode)
+            {
+                case 0:
+                    return memory[address];
+                case 1:
+                    return address;
+                case 2:
+                    return memory[address] + relativeBase;
+                default:
+                    throw new Exception("Unknown parameter mode");
+            }
+        }
+
+        private long[] memory;
+        private long[] program;
+        private long instructionPointer;
+        private long relativeBase;
         private InputAction inputAction;
-        private Action<int> outputAction;
+        private Action<long> outputAction;
     }
 }

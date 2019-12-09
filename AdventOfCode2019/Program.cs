@@ -9,7 +9,46 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day08a();
+            Day09();
+        }
+
+        private static void Day09()
+        {
+            long[] input;
+            using (var file = File.OpenText("Input/day09.txt"))
+            {
+                string line = file.ReadLine();
+                var strings = line.Split(',');
+                input = new long[strings.Length];
+                for (int i = 0; i < strings.Length; i++)
+                    input[i] = long.Parse(strings[i]);
+            }
+
+            IntcodeMachine im = new IntcodeMachine(input,
+                (out long value) =>
+                {
+                    value = 1;
+                    return true;
+                },
+                (long value) =>
+                {
+                    Console.WriteLine("9a: " + value);
+                });
+            im.RunProgram();
+
+            im.ResetProgram();
+            im.SetInputAction(
+                (out long value) =>
+                {
+                    value = 2;
+                    return true;
+                });
+            im.SetOutputAction(
+                (long value) =>
+                {
+                    Console.WriteLine("9b: " + value);
+                });
+            im.RunProgram();
         }
 
         private static void Day08a()
@@ -27,7 +66,7 @@ namespace AdventOfCode2019
                 int offset = 0;
                 while ((line = file.ReadLine()) != null)
                 {
-                    for(int i=0; i<100; i++)
+                    for (int i = 0; i < 100; i++)
                     {
                         int zeroes = 0;
                         int ones = 0;
@@ -35,13 +74,13 @@ namespace AdventOfCode2019
 
                         int[] layer = new int[25 * 6];
 
-                        for (int y=0; y<6; y++)
+                        for (int y = 0; y < 6; y++)
                         {
-                            for(int x=0; x<25; x++)
+                            for (int x = 0; x < 25; x++)
                             {
                                 int pixel = line[offset++] - '0';
                                 layer[y * 25 + x] = pixel;
-                                if(pixel == 0)
+                                if (pixel == 0)
                                     zeroes++;
                                 if (pixel == 1)
                                     ones++;
@@ -52,14 +91,13 @@ namespace AdventOfCode2019
 
                         layers.Add(layer);
 
-                        if(zeroes < minimumZeros)
+                        if (zeroes < minimumZeros)
                         {
                             minimumIndex = i;
                             minimumZeros = zeroes;
                             minimumOnes = ones;
                             minimumTwos = twos;
                         }
-
                     }
                 }
             }
@@ -75,14 +113,13 @@ namespace AdventOfCode2019
                 }
             }
 
-
-            for (int i=0; i<layers.Count; i++)
+            for (int i = 0; i < layers.Count; i++)
             {
-                for(int y=0; y<6; y++)
+                for (int y = 0; y < 6; y++)
                 {
                     for (int x = 0; x < 25; x++)
                     {
-                        if(final[y * 25 +x] == 2)
+                        if (final[y * 25 + x] == 2)
                         {
                             final[y * 25 + x] = layers[i][y * 25 + x];
                         }
@@ -94,7 +131,7 @@ namespace AdventOfCode2019
             {
                 for (int x = 0; x < 25; x++)
                 {
-                    switch(final[y * 25 + x])
+                    switch (final[y * 25 + x])
                     {
                         case 0:
                             Console.Write("X");
@@ -113,8 +150,7 @@ namespace AdventOfCode2019
             }
         }
 
-        private static IEnumerable<IEnumerable<T>>
-    GetPermutations<T>(IEnumerable<T> list, int length)
+        private static IEnumerable<IEnumerable<T>> GetPermutations<T>(IEnumerable<T> list, int length)
         {
             if (length == 1) return list.Select(t => new T[] { t });
 
@@ -125,27 +161,27 @@ namespace AdventOfCode2019
 
         private static void Day07b()
         {
-            int[] input;
+            long[] input;
             using (var file = File.OpenText("Input/day07.txt"))
             {
                 string line = file.ReadLine();
                 var strings = line.Split(',');
-                input = new int[strings.Length];
+                input = new long[strings.Length];
                 for (int i = 0; i < strings.Length; i++)
-                    input[i] = int.Parse(strings[i]);
+                    input[i] = long.Parse(strings[i]);
             }
 
             List<int> set = new List<int> { 5, 6, 7, 8, 9 };
             var permutations = GetPermutations(set, 5);
 
-            List<int> pipeAB = new List<int>();
-            List<int> pipeBC = new List<int>();
-            List<int> pipeCD = new List<int>();
-            List<int> pipeDE = new List<int>();
-            List<int> pipeEA = new List<int>();
+            List<long> pipeAB = new List<long>();
+            List<long> pipeBC = new List<long>();
+            List<long> pipeCD = new List<long>();
+            List<long> pipeDE = new List<long>();
+            List<long> pipeEA = new List<long>();
 
             IntcodeMachine imA = new IntcodeMachine(input,
-                (out int value) =>
+                (out long value) =>
                 {
                     if (pipeEA.Count == 0)
                     {
@@ -156,12 +192,12 @@ namespace AdventOfCode2019
                     pipeEA.RemoveAt(0);
                     return true;
                 },
-                (int value) =>
+                (long value) =>
                 {
                     pipeAB.Add(value);
                 });
             IntcodeMachine imB = new IntcodeMachine(input,
-                (out int value) =>
+                (out long value) =>
                 {
                     if (pipeAB.Count == 0)
                     {
@@ -172,12 +208,12 @@ namespace AdventOfCode2019
                     pipeAB.RemoveAt(0);
                     return true;
                 },
-                (int value) =>
+                (long value) =>
                 {
                     pipeBC.Add(value);
                 });
             IntcodeMachine imC = new IntcodeMachine(input,
-                (out int value) =>
+                (out long value) =>
                 {
                     if (pipeBC.Count == 0)
                     {
@@ -188,12 +224,12 @@ namespace AdventOfCode2019
                     pipeBC.RemoveAt(0);
                     return true;
                 },
-                (int value) =>
+                (long value) =>
                 {
                     pipeCD.Add(value);
                 });
             IntcodeMachine imD = new IntcodeMachine(input,
-                (out int value) =>
+                (out long value) =>
                 {
                     if (pipeCD.Count == 0)
                     {
@@ -204,12 +240,12 @@ namespace AdventOfCode2019
                     pipeCD.RemoveAt(0);
                     return true;
                 },
-                (int value) =>
+                (long value) =>
                 {
                     pipeDE.Add(value);
                 });
             IntcodeMachine imE = new IntcodeMachine(input,
-                (out int value) =>
+                (out long value) =>
                 {
                     if (pipeDE.Count == 0)
                     {
@@ -220,12 +256,12 @@ namespace AdventOfCode2019
                     pipeDE.RemoveAt(0);
                     return true;
                 },
-                (int value) =>
+                (long value) =>
                 {
                     pipeEA.Add(value);
                 });
 
-            int maxOutput = int.MinValue;
+            long maxOutput = int.MinValue;
             foreach (var p in permutations)
             {
                 List<int> permutationList = new List<int>(p);
@@ -265,31 +301,31 @@ namespace AdventOfCode2019
 
         private static void Day07a()
         {
-            int[] input;
+            long[] input;
             using (var file = File.OpenText("Input/day07.txt"))
             {
                 string line = file.ReadLine();
                 var strings = line.Split(',');
-                input = new int[strings.Length];
+                input = new long[strings.Length];
                 for (int i = 0; i < strings.Length; i++)
-                    input[i] = int.Parse(strings[i]);
+                    input[i] = long.Parse(strings[i]);
             }
 
             List<int> set = new List<int> { 0, 1, 2, 3, 4 };
             var permutations = GetPermutations(set, 5);
 
-            int maxOutput = int.MinValue;
-            int output = 0;
-            List<int> inputs = new List<int>();
+            long maxOutput = long.MinValue;
+            long output = 0;
+            List<long> inputs = new List<long>();
 
             IntcodeMachine im = new IntcodeMachine(input,
-                (out int value) =>
+                (out long value) =>
                 {
                     value = inputs[0];
                     inputs.RemoveAt(0);
                     return true;
                 },
-                (int value) =>
+                (long value) =>
                 {
                     output = value;
                     if (output > maxOutput)
@@ -412,35 +448,37 @@ namespace AdventOfCode2019
 
         private static void Day05()
         {
-            int[] input;
+            long[] input;
             using (var file = File.OpenText("Input/day05.txt"))
             {
                 string line = file.ReadLine();
                 var strings = line.Split(',');
-                input = new int[strings.Length];
+                input = new long[strings.Length];
                 for (int i = 0; i < strings.Length; i++)
-                    input[i] = int.Parse(strings[i]);
+                    input[i] = long.Parse(strings[i]);
             }
 
             IntcodeMachine im = new IntcodeMachine(input,
-                (out int value) =>
+                (out long value) =>
                 {
                     value = 1;
                     return true;
                 },
-                (int value) =>
+                (long value) =>
                 {
                     Console.WriteLine("5a output value: " + value);
                 });
             im.RunProgram();
 
-            im = new IntcodeMachine(input,
-                (out int value) =>
+            im.ResetProgram();
+            im.SetInputAction(
+                (out long value) =>
                 {
                     value = 5;
                     return true;
-                },
-                (int value) =>
+                });
+            im.SetOutputAction(
+                (long value) =>
                 {
                     Console.WriteLine("5b output value: " + value);
                 });
@@ -664,7 +702,7 @@ namespace AdventOfCode2019
 
         private static void Day02b()
         {
-            int[] input = {1,0,0,3,1,1,2,3,1,3,4,3,1,5,0,3,2,9,1,19,1,19,5,23,1,23,6,27,2,9,27,31,1,5,31,35,1,35,10,
+            long[] input = {1,0,0,3,1,1,2,3,1,3,4,3,1,5,0,3,2,9,1,19,1,19,5,23,1,23,6,27,2,9,27,31,1,5,31,35,1,35,10,
                 39,1,39,10,43,2,43,9,47,1,6,47,51,2,51,6,55,1,5,55,59,2,59,10,63,1,9,63,67,1,9,67,71,2,71,6,75,1,5,75,
                 79,1,5,79,83,1,9,83,87,2,87,10,91,2,10,91,95,1,95,9,99,2,99,9,103,2,10,103,107,2,9,107,111,1,111,5,
                 115,1,115,2,119,1,119,6,0,99,2,0,14,0};
@@ -675,10 +713,10 @@ namespace AdventOfCode2019
 
             do
             {
-                im.WriteMemoryValue(1, noun);
-                im.WriteMemoryValue(2, verb);
+                im.SetMemoryValue(1, noun);
+                im.SetMemoryValue(2, verb);
                 im.RunProgram();
-                int result = im.ReadMemoryValue(0);
+                long result = im.GetMemoryValue(0);
                 if (result == 19690720)
                     break;
                 verb++;
@@ -695,16 +733,16 @@ namespace AdventOfCode2019
 
         private static void Day02a()
         {
-            int[] input = {1,0,0,3,1,1,2,3,1,3,4,3,1,5,0,3,2,9,1,19,1,19,5,23,1,23,6,27,2,9,27,31,1,5,31,35,1,35,10,
+            long[] input = {1,0,0,3,1,1,2,3,1,3,4,3,1,5,0,3,2,9,1,19,1,19,5,23,1,23,6,27,2,9,27,31,1,5,31,35,1,35,10,
                 39,1,39,10,43,2,43,9,47,1,6,47,51,2,51,6,55,1,5,55,59,2,59,10,63,1,9,63,67,1,9,67,71,2,71,6,75,1,5,75,
                 79,1,5,79,83,1,9,83,87,2,87,10,91,2,10,91,95,1,95,9,99,2,99,9,103,2,10,103,107,2,9,107,111,1,111,5,
                 115,1,115,2,119,1,119,6,0,99,2,0,14,0};
 
             IntcodeMachine im = new IntcodeMachine(input, null, null);
-            im.WriteMemoryValue(1, 12);
-            im.WriteMemoryValue(2, 2);
+            im.SetMemoryValue(1, 12);
+            im.SetMemoryValue(2, 2);
             im.RunProgram();
-            int result = im.ReadMemoryValue(0);
+            long result = im.GetMemoryValue(0);
             Console.WriteLine($"Day 2a: {result}");
         }
 
