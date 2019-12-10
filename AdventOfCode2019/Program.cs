@@ -167,10 +167,10 @@ namespace AdventOfCode2019
                 var matchList = asteroidList.FindAll((asteroid) => (Math.Abs(asteroid.Angle - currentAngle) < 0.0001));
                 Asteroid closest = null;
                 double closestDistance = double.MaxValue;
-                for(int i=0; i<matchList.Count; i++)
+                for (int i = 0; i < matchList.Count; i++)
                 {
                     double distance = Math.Sqrt(Math.Pow(matchList[i].X - baseX, 2) + Math.Pow(matchList[i].Y - baseY, 2));
-                    if(distance < closestDistance)
+                    if (distance < closestDistance)
                     {
                         closestDistance = distance;
                         closest = matchList[i];
@@ -178,7 +178,7 @@ namespace AdventOfCode2019
                 }
 
                 laserCount++;
-                if(laserCount == 200)
+                if (laserCount == 200)
                 {
                     foundX = closest.X;
                     foundY = closest.Y;
@@ -188,9 +188,9 @@ namespace AdventOfCode2019
                 asteroidList.Remove(closest);
 
                 bool foundNewAngle = false;
-                foreach(var a in asteroidList)
+                foreach (var a in asteroidList)
                 {
-                    if(a.Angle > currentAngle + 0.0001)
+                    if (a.Angle > currentAngle + 0.0001)
                     {
                         currentAngle = a.Angle;
                         foundNewAngle = true;
@@ -199,7 +199,6 @@ namespace AdventOfCode2019
                 }
                 if (!foundNewAngle)
                     currentAngle = asteroidList[0].Angle;
-
             } while (true);
 
             Console.WriteLine($"10b: {foundX * 100 + foundY}");

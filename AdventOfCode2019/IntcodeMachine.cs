@@ -10,7 +10,7 @@ namespace AdventOfCode2019
 
     public class IntcodeMachine
     {
-        const int MemorySize = 10000;
+        private const int MemorySize = 10000;
 
         public delegate bool InputAction(out long input);
 
@@ -138,14 +138,17 @@ namespace AdventOfCode2019
 
         private long GetParameterAddress(long parameterMode, long address)
         {
-            switch(parameterMode)
+            switch (parameterMode)
             {
                 case 0:
                     return memory[address];
+
                 case 1:
                     return address;
+
                 case 2:
                     return memory[address] + relativeBase;
+
                 default:
                     throw new Exception("Unknown parameter mode");
             }
