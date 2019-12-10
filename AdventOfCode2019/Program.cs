@@ -9,7 +9,200 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day09();
+            Day10();
+        }
+
+        private static int GCD(int a, int b)
+        {
+            while (a != 0 && b != 0)
+            {
+                if (a > b)
+                    a %= b;
+                else
+                    b %= a;
+            }
+
+            return a == 0 ? b : a;
+        }
+
+        private static double GetAngle(int x, int y)
+        {
+            return Math.Atan2(y, x) + Math.PI / 2.0;
+        }
+
+        public class Asteroid
+        {
+            public bool Present { get; set; }
+            public int ViewCount { get; set; }
+            public double Angle { get; set; }
+            public int X { get; set; }
+            public int Y { get; set; }
+        }
+
+        private static void Day10()
+        {
+            List<List<Asteroid>> asteroidMatrix = new List<List<Asteroid>>();
+
+            using (var file = File.OpenText("Input/day10.txt"))
+            {
+                string line;
+                while ((line = file.ReadLine()) != null)
+                {
+                    List<Asteroid> current = new List<Asteroid>();
+                    foreach (var c in line)
+                    {
+                        if (c == '#')
+                            current.Add(new Asteroid() { Present = true, ViewCount = 0 });
+                        else
+                            current.Add(new Asteroid() { Present = false, ViewCount = 0 });
+                    }
+                    asteroidMatrix.Add(current);
+                }
+            }
+
+            // This is some ugly brute force action
+            // I look through all of the asteroids, then for each asteroid, I look through all of them again,
+            // and compare if the asteroid is the closest one in that direction.
+            // I determined the direction by using the Euclidean algorithm to find the greatest common divisor,
+            // dividing the distance by that, then stepping along the direction.
+
+            int maxViewCount = 0;
+            int baseX = 0, baseY = 0;
+
+            for (int thisY = 0; thisY < asteroidMatrix.Count; thisY++)
+            {
+                for (int thisX = 0; thisX < asteroidMatrix[thisY].Count; thisX++)
+                {
+                    if (asteroidMatrix[thisY][thisX].Present)
+                    {
+                        for (int y = 0; y < asteroidMatrix.Count; y++)
+                        {
+                            for (int x = 0; x < asteroidMatrix[y].Count; x++)
+                            {
+                                asteroidMatrix[y][x].X = x;
+                                asteroidMatrix[y][x].Y = y;
+
+                                if (x == thisX && y == thisY)
+                                    continue;
+
+                                if (asteroidMatrix[y][x].Present)
+                                {
+                                    int gcd = GCD(Math.Abs(y - thisY), Math.Abs(x - thisX));
+                                    if (gcd == 1)
+                                    {
+                                        asteroidMatrix[thisY][thisX].ViewCount++;
+                                    }
+                                    else
+                                    {
+                                        int xOffset = (x - thisX) / gcd;
+                                        int yOffset = (y - thisY) / gcd;
+                                        int tempX = thisX;
+                                        int tempY = thisY;
+                                        while (tempX + xOffset >= 0 && tempX + xOffset < asteroidMatrix[y].Count
+                                            && tempY + yOffset >= 0 && tempY + yOffset < asteroidMatrix.Count)
+                                        {
+                                            tempX += xOffset;
+                                            tempY += yOffset;
+                                            if (tempX == x && tempY == y)
+                                            {
+                                                asteroidMatrix[thisY][thisX].ViewCount++;
+                                                break;
+                                            }
+                                            else if (asteroidMatrix[tempY][tempX].Present)
+                                            {
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (asteroidMatrix[thisY][thisX].ViewCount > maxViewCount)
+                        {
+                            maxViewCount = asteroidMatrix[thisY][thisX].ViewCount;
+                            baseX = thisX;
+                            baseY = thisY;
+                        }
+                    }
+                }
+            }
+
+            Console.WriteLine("10a: " + maxViewCount);
+
+            // More brute force nonsense
+            // I calculate the angle from our base asteroid to every other asteroid
+            // Then I sort the list of asteroids by their angle,
+            // Starting at angle zero, I find all the matching asteroids, pick the closest one
+            // and blow it up. Then I look for the next highest angle in the list and start again
+            // if I don't find a next angle, then loop back to the beginning.
+
+            List<Asteroid> asteroidList = new List<Asteroid>();
+
+            for (int y = 0; y < asteroidMatrix.Count; y++)
+            {
+                for (int x = 0; x < asteroidMatrix[y].Count; x++)
+                {
+                    if (x == baseX && y == baseY)
+                        continue;
+
+                    if (asteroidMatrix[y][x].Present)
+                    {
+                        asteroidMatrix[y][x].Angle = GetAngle(x - baseX, y - baseY);
+                        if (asteroidMatrix[y][x].Angle < 0)
+                            asteroidMatrix[y][x].Angle += Math.PI * 2;
+                        asteroidList.Add(asteroidMatrix[y][x]);
+                    }
+                }
+            }
+
+            asteroidList.Sort((a, b) => (a.Angle.CompareTo(b.Angle)));
+
+            double currentAngle = 0.0;
+            int laserCount = 0;
+            int foundX = 0, foundY = 0;
+
+            do
+            {
+                var matchList = asteroidList.FindAll((asteroid) => (Math.Abs(asteroid.Angle - currentAngle) < 0.0001));
+                Asteroid closest = null;
+                double closestDistance = double.MaxValue;
+                for(int i=0; i<matchList.Count; i++)
+                {
+                    double distance = Math.Sqrt(Math.Pow(matchList[i].X - baseX, 2) + Math.Pow(matchList[i].Y - baseY, 2));
+                    if(distance < closestDistance)
+                    {
+                        closestDistance = distance;
+                        closest = matchList[i];
+                    }
+                }
+
+                laserCount++;
+                if(laserCount == 200)
+                {
+                    foundX = closest.X;
+                    foundY = closest.Y;
+                    break;
+                }
+
+                asteroidList.Remove(closest);
+
+                bool foundNewAngle = false;
+                foreach(var a in asteroidList)
+                {
+                    if(a.Angle > currentAngle + 0.0001)
+                    {
+                        currentAngle = a.Angle;
+                        foundNewAngle = true;
+                        break;
+                    }
+                }
+                if (!foundNewAngle)
+                    currentAngle = asteroidList[0].Angle;
+
+            } while (true);
+
+            Console.WriteLine($"10b: {foundX * 100 + foundY}");
         }
 
         private static void Day09()
