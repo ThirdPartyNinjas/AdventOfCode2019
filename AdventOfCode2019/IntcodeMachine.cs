@@ -68,28 +68,25 @@ namespace AdventOfCode2019
                 instruction /= 10;
                 long parameterModeC = instruction % 10;
 
-                long parameterAddressA, parameterAddressB, parameterAddressC;
+                // because our memory buffer is so much bigger than our program size, we can
+                // read the parameter values here, and just ignore the ones that aren't used
+                long parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
+                long parameterAddressB = GetParameterAddress(parameterModeB, instructionPointer + 2);
+                long parameterAddressC = GetParameterAddress(parameterModeC, instructionPointer + 3);
 
                 switch (opCode)
                 {
                     case 1: // Add
-                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
-                        parameterAddressB = GetParameterAddress(parameterModeB, instructionPointer + 2);
-                        parameterAddressC = GetParameterAddress(parameterModeC, instructionPointer + 3);
                         memory[parameterAddressC] = memory[parameterAddressA] + memory[parameterAddressB];
                         instructionPointer += 4;
                         break;
 
                     case 2: // Multiply
-                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
-                        parameterAddressB = GetParameterAddress(parameterModeB, instructionPointer + 2);
-                        parameterAddressC = GetParameterAddress(parameterModeC, instructionPointer + 3);
                         memory[parameterAddressC] = memory[parameterAddressA] * memory[parameterAddressB];
                         instructionPointer += 4;
                         break;
 
                     case 3: // Input
-                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
                         if (!inputAction(out long input))
                             return IntcodeRunState.WaitingForInput;
                         memory[parameterAddressA] = input;
@@ -97,14 +94,11 @@ namespace AdventOfCode2019
                         break;
 
                     case 4: // Output
-                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
                         outputAction(memory[parameterAddressA]);
                         instructionPointer += 2;
                         break;
 
                     case 5: // Jump if true
-                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
-                        parameterAddressB = GetParameterAddress(parameterModeB, instructionPointer + 2);
                         if (memory[parameterAddressA] != 0)
                             instructionPointer = memory[parameterAddressB];
                         else
@@ -112,8 +106,6 @@ namespace AdventOfCode2019
                         break;
 
                     case 6: // Jump if false
-                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
-                        parameterAddressB = GetParameterAddress(parameterModeB, instructionPointer + 2);
                         if (memory[parameterAddressA] == 0)
                             instructionPointer = memory[parameterAddressB];
                         else
@@ -121,23 +113,16 @@ namespace AdventOfCode2019
                         break;
 
                     case 7: // Less than
-                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
-                        parameterAddressB = GetParameterAddress(parameterModeB, instructionPointer + 2);
-                        parameterAddressC = GetParameterAddress(parameterModeC, instructionPointer + 3);
                         memory[parameterAddressC] = (memory[parameterAddressA] < memory[parameterAddressB]) ? 1 : 0;
                         instructionPointer += 4;
                         break;
 
                     case 8: // Equals
-                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
-                        parameterAddressB = GetParameterAddress(parameterModeB, instructionPointer + 2);
-                        parameterAddressC = GetParameterAddress(parameterModeC, instructionPointer + 3);
                         memory[parameterAddressC] = (memory[parameterAddressA] == memory[parameterAddressB]) ? 1 : 0;
                         instructionPointer += 4;
                         break;
 
                     case 9: // Adjust relative base
-                        parameterAddressA = GetParameterAddress(parameterModeA, instructionPointer + 1);
                         relativeBase += memory[parameterAddressA];
                         instructionPointer += 2;
                         break;

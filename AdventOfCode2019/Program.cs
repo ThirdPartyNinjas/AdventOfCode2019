@@ -9,7 +9,7 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day10();
+            Day09();
         }
 
         private static int GCD(int a, int b)
