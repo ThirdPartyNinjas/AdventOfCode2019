@@ -62,12 +62,15 @@ namespace AdventOfCode2019
                             case 0:
                                 y--;
                                 break;
+
                             case 1:
                                 x++;
                                 break;
+
                             case 2:
                                 y++;
                                 break;
+
                             case 3:
                                 x--;
                                 break;
