@@ -9,7 +9,124 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day10();
+            Day11();
+        }
+
+        private static void Day11()
+        {
+            Dictionary<(int x, int y), (int color, bool painted)> panels = new Dictionary<(int x, int y), (int color, bool painted)>();
+            int x = 0, y = 0;
+            int direction = 0;
+            bool waitingForColor = true;
+
+            long[] input;
+            using (var file = File.OpenText("Input/day11.txt"))
+            {
+                string line = file.ReadLine();
+                var strings = line.Split(',');
+                input = new long[strings.Length];
+                for (int i = 0; i < strings.Length; i++)
+                    input[i] = long.Parse(strings[i]);
+            }
+
+            IntcodeMachine im = new IntcodeMachine(input,
+                (out long value) =>
+                {
+                    if (panels.ContainsKey((x, y)))
+                    {
+                        value = panels[(x, y)].color;
+                    }
+                    else
+                    {
+                        value = 0;
+                    }
+                    return true;
+                },
+                (long value) =>
+                {
+                    if (waitingForColor)
+                    {
+                        panels[(x, y)] = ((int)value, true);
+                        waitingForColor = false;
+                    }
+                    else
+                    {
+                        direction += value == 0 ? -1 : 1;
+                        if (direction < 0)
+                            direction = 3;
+                        if (direction > 3)
+                            direction = 0;
+                        waitingForColor = true;
+                        switch (direction)
+                        {
+                            case 0:
+                                y--;
+                                break;
+                            case 1:
+                                x++;
+                                break;
+                            case 2:
+                                y++;
+                                break;
+                            case 3:
+                                x--;
+                                break;
+                        }
+                    }
+                });
+            im.RunProgram();
+
+            int paintedCount = 0;
+            foreach (var v in panels.Values)
+            {
+                if (v.painted)
+                {
+                    paintedCount++;
+                }
+            }
+
+            Console.WriteLine("10a: " + paintedCount);
+
+            panels.Clear();
+            panels[(0, 0)] = (1, false);
+            x = y = 0;
+            direction = 0;
+            waitingForColor = true;
+            im.ResetProgram();
+            im.RunProgram();
+
+            int minimumX = int.MaxValue, maximumX = int.MinValue;
+            int minimumY = int.MaxValue, maximumY = int.MinValue;
+            foreach (var k in panels.Keys)
+            {
+                if (k.x < minimumX)
+                    minimumX = k.x;
+                if (k.x > maximumX)
+                    maximumX = k.x;
+                if (k.y < minimumY)
+                    minimumY = k.y;
+                if (k.y > maximumY)
+                    maximumY = k.y;
+            }
+
+            for (int dy = minimumY; dy <= maximumY; dy++)
+            {
+                for (int dx = minimumX; dx <= maximumX; dx++)
+                {
+                    if (panels.ContainsKey((dx, dy)))
+                    {
+                        if (panels[(dx, dy)].color == 1)
+                            Console.Write("#");
+                        else
+                            Console.Write(".");
+                    }
+                    else
+                    {
+                        Console.Write(".");
+                    }
+                }
+                Console.WriteLine("");
+            }
         }
 
         private static int GCD(int a, int b)
@@ -167,10 +284,10 @@ namespace AdventOfCode2019
                 var matchList = asteroidList.FindAll((asteroid) => (Math.Abs(asteroid.Angle - currentAngle) < 0.0001));
                 Asteroid closest = null;
                 double closestDistance = double.MaxValue;
-                for(int i=0; i<matchList.Count; i++)
+                for (int i = 0; i < matchList.Count; i++)
                 {
                     double distance = Math.Sqrt(Math.Pow(matchList[i].X - baseX, 2) + Math.Pow(matchList[i].Y - baseY, 2));
-                    if(distance < closestDistance)
+                    if (distance < closestDistance)
                     {
                         closestDistance = distance;
                         closest = matchList[i];
@@ -178,7 +295,7 @@ namespace AdventOfCode2019
                 }
 
                 laserCount++;
-                if(laserCount == 200)
+                if (laserCount == 200)
                 {
                     foundX = closest.X;
                     foundY = closest.Y;
@@ -188,9 +305,9 @@ namespace AdventOfCode2019
                 asteroidList.Remove(closest);
 
                 bool foundNewAngle = false;
-                foreach(var a in asteroidList)
+                foreach (var a in asteroidList)
                 {
-                    if(a.Angle > currentAngle + 0.0001)
+                    if (a.Angle > currentAngle + 0.0001)
                     {
                         currentAngle = a.Angle;
                         foundNewAngle = true;
@@ -199,7 +316,6 @@ namespace AdventOfCode2019
                 }
                 if (!foundNewAngle)
                     currentAngle = asteroidList[0].Angle;
-
             } while (true);
 
             Console.WriteLine($"10b: {foundX * 100 + foundY}");
