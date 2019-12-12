@@ -9,7 +9,221 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day11();
+            Day12b();
+        }
+
+        private class V3
+        {
+            public int X = 0, Y = 0, Z = 0;
+
+            public V3()
+            {
+            }
+
+            public V3(int a, int b, int c)
+            {
+                X = a;
+                Y = b;
+                Z = c;
+            }
+        }
+
+        static long LCM(long a, long b)
+        {
+            return (a / GCD(a, b)) * b;
+        }
+
+        private static void Day12b()
+        {
+            List<V3> positions = new List<V3>() { new V3(-4, -14, 8), new V3(1, -8, 10), new V3(-15, 2, 1), new V3(-17, -17, 16) };
+            List<V3> velocities = new List<V3>() { new V3(), new V3(), new V3(), new V3() };
+            var initialPositionX = (-4, 1, -15, -17);
+            var initialPositionY = (-14, -8, 2, -17);
+            var initialPositionZ = (8, 10, 1, 16);
+
+            void UpdateVelocities()
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = i + 1; j < 4; j++)
+                    {
+                        if (i == j)
+                            continue;
+
+                        if (positions[i].X > positions[j].X)
+                        {
+                            velocities[i].X--;
+                            velocities[j].X++;
+                        }
+                        else if (positions[i].X < positions[j].X)
+                        {
+                            velocities[i].X++;
+                            velocities[j].X--;
+                        }
+
+                        if (positions[i].Y > positions[j].Y)
+                        {
+                            velocities[i].Y--;
+                            velocities[j].Y++;
+                        }
+                        else if (positions[i].Y < positions[j].Y)
+                        {
+                            velocities[i].Y++;
+                            velocities[j].Y--;
+                        }
+
+                        if (positions[i].Z > positions[j].Z)
+                        {
+                            velocities[i].Z--;
+                            velocities[j].Z++;
+                        }
+                        else if (positions[i].Z < positions[j].Z)
+                        {
+                            velocities[i].Z++;
+                            velocities[j].Z--;
+                        }
+                    }
+                }
+            }
+
+            void UpdatePositions()
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    positions[i].X += velocities[i].X;
+                    positions[i].Y += velocities[i].Y;
+                    positions[i].Z += velocities[i].Z;
+                }
+            }
+
+            int xcount = 0;
+            int ycount = 0;
+            int zcount = 0;
+
+            bool xdone = false;
+            bool ydone = false;
+            bool zdone = false;
+
+            do
+            {
+                UpdateVelocities();
+                UpdatePositions();
+
+                if (!xdone)
+                {
+                    xcount++;
+                    var b1 = (positions[0].X, positions[1].X, positions[2].X, positions[3].X) == initialPositionX;
+                    var b2 = (velocities[0].X, velocities[1].X, velocities[2].X, velocities[3].X) == (0, 0, 0, 0);
+                    if (b1 && b2)
+                        xdone = true;
+                }
+
+                if (!ydone)
+                {
+                    ycount++;
+                    var b1 = (positions[0].Y, positions[1].Y, positions[2].Y, positions[3].Y) == initialPositionY;
+                    var b2 = (velocities[0].Y, velocities[1].Y, velocities[2].Y, velocities[3].Y) == (0, 0, 0, 0);
+                    if (b1 && b2)
+                        ydone = true;
+                }
+
+                if (!zdone)
+                {
+                    zcount++;
+                    var b1 = (positions[0].Z, positions[1].Z, positions[2].Z, positions[3].Z) == initialPositionZ;
+                    var b2 = (velocities[0].Z, velocities[1].Z, velocities[2].Z, velocities[3].Z) == (0, 0, 0, 0);
+                    if (b1 && b2)
+                        zdone = true;
+                }
+            } while (!xdone || !ydone || !zdone);
+
+            Console.WriteLine($"12b {LCM(xcount, LCM(ycount, zcount))}");
+        }
+
+        private static void Day12a()
+        {
+            List<V3> positions = new List<V3>() { new V3(-4, -14, 8), new V3(1, -8, 10), new V3(-15, 2, 1), new V3(-17, -17, 16) };
+            List<V3> velocities = new List<V3>() { new V3(), new V3(), new V3(), new V3() };
+
+            void UpdateVelocities()
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = i + 1; j < 4; j++)
+                    {
+                        if (i == j)
+                            continue;
+
+                        if (positions[i].X > positions[j].X)
+                        {
+                            velocities[i].X--;
+                            velocities[j].X++;
+                        }
+                        else if (positions[i].X < positions[j].X)
+                        {
+                            velocities[i].X++;
+                            velocities[j].X--;
+                        }
+
+                        if (positions[i].Y > positions[j].Y)
+                        {
+                            velocities[i].Y--;
+                            velocities[j].Y++;
+                        }
+                        else if (positions[i].Y < positions[j].Y)
+                        {
+                            velocities[i].Y++;
+                            velocities[j].Y--;
+                        }
+
+                        if (positions[i].Z > positions[j].Z)
+                        {
+                            velocities[i].Z--;
+                            velocities[j].Z++;
+                        }
+                        else if (positions[i].Z < positions[j].Z)
+                        {
+                            velocities[i].Z++;
+                            velocities[j].Z--;
+                        }
+                    }
+                }
+            }
+
+            void UpdatePositions()
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    positions[i].X += velocities[i].X;
+                    positions[i].Y += velocities[i].Y;
+                    positions[i].Z += velocities[i].Z;
+                }
+            }
+
+            for (int i = 0; i < 1000; i++)
+            {
+                UpdateVelocities();
+                UpdatePositions();
+            }
+
+            int energy = 0;
+
+            for (int i = 0; i < 4; i++)
+            {
+                int potential = 0;
+                potential += Math.Abs(positions[i].X);
+                potential += Math.Abs(positions[i].Y);
+                potential += Math.Abs(positions[i].Z);
+
+                int kinetic = 0;
+                kinetic += Math.Abs(velocities[i].X);
+                kinetic += Math.Abs(velocities[i].Y);
+                kinetic += Math.Abs(velocities[i].Z);
+
+                energy += potential * kinetic;
+            }
+
+            Console.WriteLine("12a " + energy);
         }
 
         private static void Day11()
@@ -132,7 +346,7 @@ namespace AdventOfCode2019
             }
         }
 
-        private static int GCD(int a, int b)
+        private static long GCD(long a, long b)
         {
             while (a != 0 && b != 0)
             {
@@ -207,7 +421,7 @@ namespace AdventOfCode2019
 
                                 if (asteroidMatrix[y][x].Present)
                                 {
-                                    int gcd = GCD(Math.Abs(y - thisY), Math.Abs(x - thisX));
+                                    int gcd = (int)GCD(Math.Abs(y - thisY), Math.Abs(x - thisX));
                                     if (gcd == 1)
                                     {
                                         asteroidMatrix[thisY][thisX].ViewCount++;
