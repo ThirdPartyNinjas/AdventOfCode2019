@@ -9,7 +9,181 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day12b();
+            Day13();
+        }
+
+        private static void Day13()
+        {
+            Dictionary<(int x, int y), int> tiles = new Dictionary<(int x, int y), int>();
+            int x = 0, y = 0;
+            int count = 0;
+            int ballx = 0, bally = 0;
+            int paddlex = 0, paddley = 0;
+
+            long[] input;
+            using (var file = File.OpenText("Input/day13.txt"))
+            {
+                string line = file.ReadLine();
+                var strings = line.Split(',');
+                input = new long[strings.Length];
+                for (int i = 0; i < strings.Length; i++)
+                    input[i] = long.Parse(strings[i]);
+            }
+
+            IntcodeMachine im = new IntcodeMachine(input, null,
+                (long value) =>
+                {
+                    if (count == 0)
+                    {
+                        count++;
+                        x = (int)value;
+                    }
+                    else if (count == 1)
+                    {
+                        count++;
+                        y = (int)value;
+                    }
+                    else
+                    {
+                        count = 0;
+                        tiles[(x, y)] = (int)value;
+
+                        if (value == 4)
+                        {
+                            ballx = x;
+                            bally = y;
+                        }
+                        else if(value == 3)
+                        {
+                            paddlex = x;
+                            paddley = y;
+                        }
+                    }
+                });
+            im.RunProgram();
+
+            int minimumX = int.MaxValue, maximumX = int.MinValue;
+            int minimumY = int.MaxValue, maximumY = int.MinValue;
+            foreach (var k in tiles.Keys)
+            {
+                if (k.x < minimumX)
+                    minimumX = k.x;
+                if (k.x > maximumX)
+                    maximumX = k.x;
+                if (k.y < minimumY)
+                    minimumY = k.y;
+                if (k.y > maximumY)
+                    maximumY = k.y;
+            }
+
+            int wallCount = 0;
+
+            for (int dy = minimumY; dy <= maximumY; dy++)
+            {
+                for (int dx = minimumX; dx <= maximumX; dx++)
+                {
+                    if (tiles.ContainsKey((dx, dy)))
+                    {
+                        Console.Write(tiles[(dx, dy)].ToString());
+
+                        if (tiles[(dx, dy)] == 2)
+                            wallCount++;
+                    }
+                    else
+                    {
+                        Console.Write(".");
+                    }
+                }
+                Console.WriteLine("");
+            }
+
+            Console.WriteLine("10a: " + wallCount);
+
+            long score = 0;
+
+            void PrintScreen()
+            {
+                Console.SetCursorPosition(0, 0);
+                for (int dy = minimumY; dy <= maximumY; dy++)
+                {
+                    for (int dx = minimumX; dx <= maximumX; dx++)
+                    {
+                        if (tiles.ContainsKey((dx, dy)))
+                        {
+                            if (tiles[(dx, dy)] == 0)
+                            {
+                                Console.Write(" ");
+                            }
+                            else
+                            {
+                                Console.Write(tiles[(dx, dy)].ToString());
+                            }
+                        }
+                        else
+                        {
+                            Console.Write(".");
+                        }
+                    }
+                    Console.WriteLine("");
+                }
+
+                Console.WriteLine("Score: " + score);
+            }
+
+            im.ResetProgram();
+            im.SetMemoryValue(0, 2);
+            im.SetInputAction(
+                (out long value) =>
+                {
+                    if (ballx < paddlex)
+                        value = -1;
+                    else if (ballx > paddlex)
+                        value = 1;
+                    else
+                        value = 0;
+                    return true;
+                });
+            im.SetOutputAction(
+                (long value) =>
+                {
+                    if (count == 0)
+                    {
+                        count++;
+                        x = (int)value;
+                    }
+                    else if (count == 1)
+                    {
+                        count++;
+                        y = (int)value;
+                    }
+                    else
+                    {
+                        count = 0;
+                        if (x == -1 && y == 0)
+                        {
+                            score = value;
+                            PrintScreen();
+                        }
+                        else
+                        {
+                            tiles[(x, y)] = (int)value;
+
+                            PrintScreen();
+
+                            if (value == 4)
+                            {
+                                ballx = x;
+                                bally = y;
+                            }
+                            else if (value == 3)
+                            {
+                                paddlex = x;
+                                paddley = y;
+                            }
+                        }
+                    }
+                });
+            im.RunProgram();
         }
 
         private class V3
@@ -28,7 +202,7 @@ namespace AdventOfCode2019
             }
         }
 
-        static long LCM(long a, long b)
+        private static long LCM(long a, long b)
         {
             return (a / GCD(a, b)) * b;
         }
