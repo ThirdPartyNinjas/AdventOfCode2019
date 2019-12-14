@@ -9,7 +9,109 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day13();
+            Day14();
+        }
+
+        class Formula
+        {
+            public string Product { get; set; }
+            public int Amount { get; set; }
+            public Dictionary<string, int> Ingredients = new Dictionary<string, int>();
+        }
+
+        private static void Day14()
+        {
+            // Note: day 14 part 2 won't work with any other input
+            // There's a magic number that would need to be removed
+
+            Dictionary<string, Formula> formulas = new Dictionary<string, Formula>();
+
+            using (var file = File.OpenText("Input/day14.txt"))
+            {
+                string line;
+                while ((line = file.ReadLine()) != null)
+                {
+                    line = line.Replace(" =>", ",");
+                    line = line.Replace(", ", ",");
+                    var strings = line.Split(',');
+
+                    var product = strings[strings.Length - 1].Split(' ');
+                    Formula f = new Formula()
+                    {
+                        Product = product[1],
+                        Amount = int.Parse(product[0]),
+                    };
+                    for(int i=0; i<strings.Length-1; i++)
+                    {
+                        var ingredient = strings[i].Split(' ');
+                        f.Ingredients[ingredient[1]] = int.Parse(ingredient[0]);
+                    }
+                    formulas[f.Product] = f;
+                }
+            }
+
+            Dictionary<string, ulong> resourcesAvailable = new Dictionary<string, ulong>();
+            resourcesAvailable["ORE"] = 1000000;
+
+            ulong fuelCrafted = 0;
+
+            void CraftResource(string target, ulong amount)
+            {
+                if (resourcesAvailable.ContainsKey(target) && resourcesAvailable[target] > 0)
+                {
+                    if(resourcesAvailable[target] >= amount)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        amount -= resourcesAvailable[target];
+                    }
+                }
+
+                if(target == "ORE")
+                {
+                    Console.WriteLine("14b Fuel Crafted: " + fuelCrafted);
+                    Environment.Exit(0);
+                }
+
+                ulong batchesRequired = amount / (ulong)(formulas[target].Amount) + ((amount % (ulong)(formulas[target].Amount)) == 0ul ? 0ul : 1ul);
+
+                foreach(var kvp in formulas[target].Ingredients)
+                {
+                    CraftResource(kvp.Key, (ulong)kvp.Value * batchesRequired);
+                    resourcesAvailable[kvp.Key] -= (ulong)kvp.Value * batchesRequired;
+                }
+                if (resourcesAvailable.ContainsKey(target))
+                {
+                    resourcesAvailable[target] += (ulong)formulas[target].Amount * batchesRequired;
+                }
+                else
+                {
+                    resourcesAvailable[target] = (ulong)formulas[target].Amount * batchesRequired;
+                }
+            }
+
+            CraftResource("FUEL", 1);
+
+            Console.WriteLine("14a :" + (1000000 - resourcesAvailable["ORE"]));
+
+            resourcesAvailable.Clear();
+            resourcesAvailable["ORE"] = 1000000000000;
+
+            // This magic number was stumbled upon experimentally.
+            // if you want to run with other inputs, delete these three lines,
+            // but expect the program to take awhile
+            CraftResource("FUEL", 3209250);
+            fuelCrafted += 3209250;
+            resourcesAvailable["FUEL"] -= 3209250;
+
+            while(true)
+            {
+                CraftResource("FUEL", 1);
+                fuelCrafted += 1;
+                resourcesAvailable["FUEL"] -= 1;
+            }
         }
 
         private static void Day13()
@@ -53,7 +155,7 @@ namespace AdventOfCode2019
                             ballx = x;
                             bally = y;
                         }
-                        else if(value == 3)
+                        else if (value == 3)
                         {
                             paddlex = x;
                             paddley = y;
