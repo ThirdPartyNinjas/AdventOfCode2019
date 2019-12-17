@@ -9,10 +9,269 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day14();
+            Day15b();
         }
 
-        class Formula
+        public static void Day15b()
+        {
+            List<List<int>> data = new List<List<int>>();
+
+            using (var file = File.OpenText("Input/day15b.txt"))
+            {
+                string line;
+                while ((line = file.ReadLine()) != null)
+                {
+                    List<int> lineData = new List<int>();
+
+                    foreach (var c in line)
+                    {
+                        switch(c)
+                        {
+                            case ' ':
+                            case '#':
+                                lineData.Add(1);
+                                break;
+                            case 'S':
+                            case '.':
+                                lineData.Add(0);
+                                break;
+                            case 'O':
+                                lineData.Add(10);
+                                break;
+                        }
+                    }
+                    data.Add(lineData);
+                }
+            }
+
+            int current = 11;
+            int time = 0;
+            do
+            {
+                int count = 0;
+                for (int y = 0; y < data.Count; y++)
+                {
+                    for (int x = 0; x < data[0].Count; x++)
+                    {
+                        if (data[y][x] >= 10 && data[y][x] != current)
+                        {
+                            if(x > 0 && data[y][x-1] == 0)
+                            {
+                                data[y][x - 1] = current;
+                                count++;
+                            }
+                            if (x < data[0].Count - 1 && data[y][x + 1] == 0)
+                            {
+                                data[y][x + 1] = current;
+                                count++;
+                            }
+                            if (y > 0 && data[y - 1][x] == 0)
+                            {
+                                data[y-1][x] = current;
+                                count++;
+                            }
+                            if (y < data.Count - 1 && data[y + 1][x] == 0)
+                            {
+                                data[y+1][x] = current;
+                                count++;
+                            }
+                        }
+                    }
+                }
+                if (count == 0)
+                {
+                    break;
+                }
+                else
+                {
+                    current++;
+                    time++;
+                }
+            } while (true);
+
+            Console.WriteLine("15b: " + time);
+        }
+
+        public static void Day15a()
+        {
+            Dictionary<(int x, int y), bool> wallMap = new Dictionary<(int, int), bool>();
+            int droidX = 0, droidY = 0;
+            int oxygenX = int.MaxValue, oxygenY = int.MaxValue;
+            int droidDirection = 0;
+            bool manualMode = false;
+            Random random = new Random();
+
+            List<(int x, int y)> offsets = new List<(int x, int y)>()
+            {
+                (0, 0),
+                (0, -1),
+                (0, 1),
+                (-1, 0),
+                (1, 0)
+            };
+
+            wallMap[(0, 0)] = false;
+
+            void DrawMap()
+            {
+                Console.SetCursorPosition(0, 0);
+
+                int minimumX = int.MaxValue, maximumX = int.MinValue;
+                int minimumY = int.MaxValue, maximumY = int.MinValue;
+
+                foreach (var key in wallMap.Keys)
+                {
+                    if (key.x < minimumX)
+                        minimumX = key.x;
+                    if (key.x > maximumX)
+                        maximumX = key.x;
+                    if (key.y < minimumY)
+                        minimumY = key.y;
+                    if (key.y > maximumY)
+                        maximumY = key.y;
+                }
+
+                if (minimumX > -20)
+                    minimumX = -20;
+                if (minimumY > -20)
+                    minimumY = -20;
+
+                for (int dy = minimumY; dy <= maximumY; dy++)
+                {
+                    for (int dx = minimumX; dx <= maximumX; dx++)
+                    {
+                        if (dx == droidX && dy == droidY)
+                        {
+                            Console.Write("D");
+                        }
+                        else if (dx == oxygenX && dy == oxygenY)
+                        {
+                            Console.Write("O");
+                        }
+                        else if (dx == 0 && dy == 0)
+                        {
+                            Console.Write("S");
+                        }
+                        else
+                        {
+                            if (wallMap.ContainsKey((dx, dy)))
+                            {
+                                if (wallMap[(dx, dy)] == true)
+                                {
+                                    Console.Write("#");
+                                }
+                                else
+                                {
+                                    Console.Write(".");
+                                }
+                            }
+                            else
+                            {
+                                Console.Write(" ");
+                            }
+                        }
+                    }
+                    Console.WriteLine("");
+                }
+            }
+
+            long[] input;
+            using (var file = File.OpenText("Input/day15.txt"))
+            {
+                string line = file.ReadLine();
+                var strings = line.Split(',');
+                input = new long[strings.Length];
+                for (int i = 0; i < strings.Length; i++)
+                    input[i] = long.Parse(strings[i]);
+            }
+
+            IntcodeMachine im = new IntcodeMachine(input,
+                (out long value) =>
+                {
+                    value = 0;
+
+                    if (!manualMode && Console.KeyAvailable)
+                    {
+                        var key = Console.ReadKey();
+                        if (key.Key == ConsoleKey.Spacebar)
+                            manualMode = true;
+                    }
+
+                    if (manualMode)
+                    {
+                        do
+                        {
+                            Console.WriteLine("Hit an arrow key:");
+                            var key = Console.ReadKey();
+                            if (key.Key == ConsoleKey.UpArrow)
+                                value = droidDirection = 1;
+                            else if (key.Key == ConsoleKey.DownArrow)
+                                value = droidDirection = 2;
+                            else if (key.Key == ConsoleKey.LeftArrow)
+                                value = droidDirection = 3;
+                            else if (key.Key == ConsoleKey.RightArrow)
+                                value = droidDirection = 4;
+                            else if (key.Key == ConsoleKey.Enter)
+                                manualMode = false;
+                            else
+                                continue;
+                            break;
+                        } while (true);
+                    }
+
+                    if (!manualMode)
+                    {
+                        if (!wallMap.ContainsKey((droidX + offsets[1].x, droidY + offsets[1].y)))
+                        {
+                            value = droidDirection = 1;
+                        }
+                        else if (!wallMap.ContainsKey((droidX + offsets[2].x, droidY + offsets[2].y)))
+                        {
+                            value = droidDirection = 2;
+                        }
+                        else if (!wallMap.ContainsKey((droidX + offsets[3].x, droidY + offsets[3].y)))
+                        {
+                            value = droidDirection = 3;
+                        }
+                        else if (!wallMap.ContainsKey((droidX + offsets[4].x, droidY + offsets[4].y)))
+                        {
+                            value = droidDirection = 4;
+                        }
+                        else
+                        {
+                            value = droidDirection = random.Next(1, 5);
+                        }
+                    }
+                    return true;
+                },
+                (long value) =>
+                {
+                    if (value == 0)
+                    {
+                        wallMap[(droidX + offsets[droidDirection].x, droidY + offsets[droidDirection].y)] = true;
+                    }
+                    else if (value == 1)
+                    {
+                        wallMap[(droidX + offsets[droidDirection].x, droidY + offsets[droidDirection].y)] = false;
+                        droidX += offsets[droidDirection].x;
+                        droidY += offsets[droidDirection].y;
+                    }
+                    else if (value == 2)
+                    {
+                        wallMap[(droidX + offsets[droidDirection].x, droidY + offsets[droidDirection].y)] = false;
+                        droidX += offsets[droidDirection].x;
+                        droidY += offsets[droidDirection].y;
+                        oxygenX = droidX;
+                        oxygenY = droidY;
+                    }
+                    DrawMap();
+                });
+
+            DrawMap();
+            im.RunProgram();
+        }
+
+        private class Formula
         {
             public string Product { get; set; }
             public int Amount { get; set; }
@@ -41,7 +300,7 @@ namespace AdventOfCode2019
                         Product = product[1],
                         Amount = int.Parse(product[0]),
                     };
-                    for(int i=0; i<strings.Length-1; i++)
+                    for (int i = 0; i < strings.Length - 1; i++)
                     {
                         var ingredient = strings[i].Split(' ');
                         f.Ingredients[ingredient[1]] = int.Parse(ingredient[0]);
@@ -59,7 +318,7 @@ namespace AdventOfCode2019
             {
                 if (resourcesAvailable.ContainsKey(target) && resourcesAvailable[target] > 0)
                 {
-                    if(resourcesAvailable[target] >= amount)
+                    if (resourcesAvailable[target] >= amount)
                     {
                         return;
                     }
@@ -69,7 +328,7 @@ namespace AdventOfCode2019
                     }
                 }
 
-                if(target == "ORE")
+                if (target == "ORE")
                 {
                     Console.WriteLine("14b Fuel Crafted: " + fuelCrafted);
                     Environment.Exit(0);
@@ -77,7 +336,7 @@ namespace AdventOfCode2019
 
                 ulong batchesRequired = amount / (ulong)(formulas[target].Amount) + ((amount % (ulong)(formulas[target].Amount)) == 0ul ? 0ul : 1ul);
 
-                foreach(var kvp in formulas[target].Ingredients)
+                foreach (var kvp in formulas[target].Ingredients)
                 {
                     CraftResource(kvp.Key, (ulong)kvp.Value * batchesRequired);
                     resourcesAvailable[kvp.Key] -= (ulong)kvp.Value * batchesRequired;
@@ -106,7 +365,7 @@ namespace AdventOfCode2019
             fuelCrafted += 3209250;
             resourcesAvailable["FUEL"] -= 3209250;
 
-            while(true)
+            while (true)
             {
                 CraftResource("FUEL", 1);
                 fuelCrafted += 1;
