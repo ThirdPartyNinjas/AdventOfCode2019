@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace AdventOfCode2019
 {
@@ -9,7 +10,124 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day16b();
+            Day17b();
+        }
+
+        public static void Day17b()
+        {
+            long[] input;
+            using (var file = File.OpenText("Input/day17.txt"))
+            {
+                string line = file.ReadLine();
+                var strings = line.Split(',');
+                input = new long[strings.Length];
+                for (int i = 0; i < strings.Length; i++)
+                    input[i] = long.Parse(strings[i]);
+            }
+
+            string[] inputs = { "B,A,B,C,A,C,B,C,A,C\n", "R,10,L,8,L,8,L,10\n", "L,8,R,10,L,10\n", "L,4,L,6,L,8,L,8\n", "n\n" };
+            List<Byte[]> asciiInputs = new List<byte[]>();
+
+            foreach(var s in inputs)
+            {
+                asciiInputs.Add(ASCIIEncoding.ASCII.GetBytes(s));
+            }
+
+            {
+                string line = "";
+                int inputCount = 0;
+                int inputPosition = 0;
+
+                IntcodeMachine im = new IntcodeMachine(input,
+                    (out long value) =>
+                    {
+                        value = asciiInputs[inputCount][inputPosition++];
+                        if(inputPosition >= asciiInputs[inputCount].Length)
+                        {
+                            inputPosition = 0;
+                            inputCount++;
+                        }
+                        Console.Write((char)(value));
+                        return true;
+                    },
+                    (long value) =>
+                    {
+                        if(value > 127)
+                        {
+                            Console.WriteLine("17b Program Output: " + value);
+                        }
+                        else if(value == 10)
+                        {
+                            Console.WriteLine(line);
+                            line = "";
+                        }
+                        else
+                        {
+                            line += (char)(value);
+                        }
+                    });
+                im.SetMemoryValue(0, 2);
+                im.RunProgram();
+            }
+        }
+
+        public static void Day17a()
+        {
+            long[] input;
+            using (var file = File.OpenText("Input/day17.txt"))
+            {
+                string line = file.ReadLine();
+                var strings = line.Split(',');
+                input = new long[strings.Length];
+                for (int i = 0; i < strings.Length; i++)
+                    input[i] = long.Parse(strings[i]);
+            }
+
+            List<string> lines = new List<string>();
+            {
+                string line = "";
+
+                IntcodeMachine im = new IntcodeMachine(input, null,
+                    (long value) =>
+                    {
+                        if (value == 10 && line.Length > 0)
+                        {
+                            Console.WriteLine(line);
+                            lines.Add(line);
+                            line = "";
+                        }
+                        else
+                        {
+                            line += (char)(value);
+                        }
+                    });
+
+                im.RunProgram();
+            }
+
+            bool[,] scaffolding = new bool[lines.Count, lines[0].Length];
+            for (int y = 0; y < lines.Count; y++)
+            {
+                for (int x = 0; x < lines[0].Length; x++)
+                {
+                    scaffolding[y, x] = lines[y][x] != '.';
+                }
+            }
+
+            int sum = 0;
+
+            for (int y = 1; y < lines.Count - 1; y++)
+            {
+                for (int x = 1; x < lines[0].Length - 1; x++)
+                {
+                    if (scaffolding[y - 1, x] && scaffolding[y + 1, x] && scaffolding[y, x - 1] && scaffolding[y, x + 1])
+                    {
+                        sum += x * y;
+                    }
+                }
+            }
+
+            Console.WriteLine("17a: " + sum);
         }
 
         public static void Day16b()
@@ -21,7 +139,7 @@ namespace AdventOfCode2019
                 string line;
                 while ((line = file.ReadLine()) != null)
                 {
-                    foreach(var c in line)
+                    foreach (var c in line)
                     {
                         input.Add(c - '0');
                     }
@@ -29,8 +147,8 @@ namespace AdventOfCode2019
             }
 
             // samples:
-            //input = new List<int>() { 0,3,0,3,6,7,3,2,5,7,7,2,1,2,9,4,4,0,6,3,4,9,1,5,6,5,4,7,4,6,6,4 };
-            //input = new List<int>() { 0,2,9,3,5,1,0,9,6,9,9,9,4,0,8,0,7,4,0,7,5,8,5,4,4,7,0,3,4,3,2,3 };
+            //input = new List<int>() { 0, 3, 0, 3, 6, 7, 3, 2, 5, 7, 7, 2, 1, 2, 9, 4, 4, 0, 6, 3, 4, 9, 1, 5, 6, 5, 4, 7, 4, 6, 6, 4 };
+            //input = new List<int>() { 0, 2, 9, 3, 5, 1, 0, 9, 6, 9, 9, 9, 4, 0, 8, 0, 7, 4, 0, 7, 5, 8, 5, 4, 4, 7, 0, 3, 4, 3, 2, 3 };
             //input = new List<int>() { 0, 3, 0, 8, 1, 7, 7, 0, 8, 8, 4, 9, 2, 1, 9, 5, 9, 7, 3, 1, 1, 6, 5, 4, 4, 6, 8, 5, 0, 5, 1, 7 };
 
             int outputOffset = 0;
@@ -40,13 +158,13 @@ namespace AdventOfCode2019
                 outputOffset += input[i];
             }
 
-            if(outputOffset <= input.Count / 2)
+            if (outputOffset <= input.Count / 2)
             {
                 throw new Exception("This code only works for output offsets over half.");
             }
 
             List<int> signal = new List<int>();
-            for(int i=0; i<10000; i++)
+            for (int i = 0; i < 10000; i++)
             {
                 signal.AddRange(input);
             }
@@ -61,7 +179,7 @@ namespace AdventOfCode2019
                 List<int> phaseOutput = signalCopy;
                 int previousSum = 0;
 
-                for(int i = length - 1; i >= outputOffset; i--)
+                for (int i = length - 1; i >= outputOffset; i--)
                 {
                     int sum = previousSum + phaseInput[i];
                     phaseOutput[i] = sum % 10;
@@ -73,7 +191,7 @@ namespace AdventOfCode2019
             }
 
             Console.Write("Day 16b: ");
-            for(int i=0; i<8; i++)
+            for (int i = 0; i < 8; i++)
             {
                 Console.Write(signal[i + outputOffset]);
             }
@@ -132,7 +250,6 @@ namespace AdventOfCode2019
             }
             Console.WriteLine("");
         }
-
 
         public static void Day15b()
         {
