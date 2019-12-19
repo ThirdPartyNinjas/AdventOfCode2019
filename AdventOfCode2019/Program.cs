@@ -9,8 +9,130 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day15b();
+            Day16b();
         }
+
+        public static void Day16b()
+        {
+            List<int> input = new List<int>();
+
+            using (var file = File.OpenText("Input/day16.txt"))
+            {
+                string line;
+                while ((line = file.ReadLine()) != null)
+                {
+                    foreach(var c in line)
+                    {
+                        input.Add(c - '0');
+                    }
+                }
+            }
+
+            // samples:
+            //input = new List<int>() { 0,3,0,3,6,7,3,2,5,7,7,2,1,2,9,4,4,0,6,3,4,9,1,5,6,5,4,7,4,6,6,4 };
+            //input = new List<int>() { 0,2,9,3,5,1,0,9,6,9,9,9,4,0,8,0,7,4,0,7,5,8,5,4,4,7,0,3,4,3,2,3 };
+            //input = new List<int>() { 0, 3, 0, 8, 1, 7, 7, 0, 8, 8, 4, 9, 2, 1, 9, 5, 9, 7, 3, 1, 1, 6, 5, 4, 4, 6, 8, 5, 0, 5, 1, 7 };
+
+            int outputOffset = 0;
+            for (int i = 0; i < 7; i++)
+            {
+                outputOffset *= 10;
+                outputOffset += input[i];
+            }
+
+            if(outputOffset <= input.Count / 2)
+            {
+                throw new Exception("This code only works for output offsets over half.");
+            }
+
+            List<int> signal = new List<int>();
+            for(int i=0; i<10000; i++)
+            {
+                signal.AddRange(input);
+            }
+            List<int> signalCopy = new List<int>(signal);
+
+            const int totalPhases = 100;
+            int length = signal.Count;
+
+            for (int phase = 0; phase < totalPhases; phase++)
+            {
+                List<int> phaseInput = signal;
+                List<int> phaseOutput = signalCopy;
+                int previousSum = 0;
+
+                for(int i = length - 1; i >= outputOffset; i--)
+                {
+                    int sum = previousSum + phaseInput[i];
+                    phaseOutput[i] = sum % 10;
+                    previousSum = sum;
+                }
+
+                signal = phaseOutput;
+                signalCopy = phaseInput;
+            }
+
+            Console.Write("Day 16b: ");
+            for(int i=0; i<8; i++)
+            {
+                Console.Write(signal[i + outputOffset]);
+            }
+            Console.WriteLine("");
+        }
+
+        public static void Day16a()
+        {
+            List<int> signal = new List<int>();
+
+            using (var file = File.OpenText("Input/day16.txt"))
+            {
+                string line;
+                while ((line = file.ReadLine()) != null)
+                {
+                    foreach (var c in line)
+                    {
+                        signal.Add(c - '0');
+                    }
+                }
+            }
+
+            const int totalPhases = 100;
+            List<int> signalCopy = new List<int>(signal);
+
+            int[] pattern = { 0, 1, 0, -1 };
+
+            for (int phase = 0; phase < totalPhases; phase++)
+            {
+                List<int> phaseInput = signal;
+                List<int> phaseOutput = signalCopy;
+
+                for (int i = 0; i < phaseInput.Count; i++)
+                {
+                    int sum = 0;
+                    int offset = 1;
+                    int scale = i + 1;
+
+                    for (int j = 0; j < phaseInput.Count; j++)
+                    {
+                        sum += phaseInput[j] * pattern[offset / scale % 4];
+                        offset = (offset + 1) % (scale * 4);
+                    }
+
+                    phaseOutput[i] = Math.Abs(sum) % 10;
+                }
+
+                signal = phaseOutput;
+                signalCopy = phaseInput;
+            }
+
+            Console.Write("Day 16a: ");
+            for (int i = 0; i < 8; i++)
+            {
+                Console.Write(signal[i]);
+            }
+            Console.WriteLine("");
+        }
+
 
         public static void Day15b()
         {
@@ -25,16 +147,18 @@ namespace AdventOfCode2019
 
                     foreach (var c in line)
                     {
-                        switch(c)
+                        switch (c)
                         {
                             case ' ':
                             case '#':
                                 lineData.Add(1);
                                 break;
+
                             case 'S':
                             case '.':
                                 lineData.Add(0);
                                 break;
+
                             case 'O':
                                 lineData.Add(10);
                                 break;
@@ -55,7 +179,7 @@ namespace AdventOfCode2019
                     {
                         if (data[y][x] >= 10 && data[y][x] != current)
                         {
-                            if(x > 0 && data[y][x-1] == 0)
+                            if (x > 0 && data[y][x - 1] == 0)
                             {
                                 data[y][x - 1] = current;
                                 count++;
@@ -67,12 +191,12 @@ namespace AdventOfCode2019
                             }
                             if (y > 0 && data[y - 1][x] == 0)
                             {
-                                data[y-1][x] = current;
+                                data[y - 1][x] = current;
                                 count++;
                             }
                             if (y < data.Count - 1 && data[y + 1][x] == 0)
                             {
-                                data[y+1][x] = current;
+                                data[y + 1][x] = current;
                                 count++;
                             }
                         }
