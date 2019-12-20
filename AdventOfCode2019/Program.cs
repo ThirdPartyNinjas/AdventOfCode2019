@@ -10,7 +10,150 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day17b();
+            Day18a();
+        }
+
+        public static void Day18a()
+        {
+            // 0 == open
+            // 100-125 == key
+            // 200-225 == door
+            // 1000 == wall
+            int width, height;
+            int[,] maze;
+
+            int currentX = 0, currentY = 0;
+            Dictionary<int, (int x, int y)> keyLocations = new Dictionary<int, (int x, int y)>();
+            Dictionary<int, (int x, int y)> doorLocations = new Dictionary<int, (int x, int y)>();
+
+            using (var file = File.OpenText("Input/day18.txt"))
+            {
+                string line;
+                List<string> lines = new List<string>();
+                while ((line = file.ReadLine()) != null)
+                {
+                    lines.Add(line);
+                }
+
+                width = lines[0].Length;
+                height = lines.Count;
+                maze = new int[height, width];
+
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        if (lines[y][x] == '@')
+                        {
+                            maze[y, x] = 0;
+                            currentX = x;
+                            currentY = y;
+                        }
+                        else if (lines[y][x] == '.')
+                        {
+                            maze[y, x] = 0;
+                        }
+                        else if (lines[y][x] == '#')
+                        {
+                            maze[y, x] = 1000;
+                        }
+                        else if (lines[y][x] >= 'a' && lines[y][x] <= 'z')
+                        {
+                            maze[y, x] = 100 + lines[y][x] - 'a';
+                            keyLocations[maze[y, x] - 100] = (x, y);
+                        }
+                        else if (lines[y][x] >= 'A' && lines[y][x] <= 'Z')
+                        {
+                            maze[y, x] = 200 + lines[y][x] - 'A';
+                            doorLocations[maze[y, x] - 200] = (x, y);
+                        }
+                        else
+                        {
+                            throw new Exception("Unexpected input!");
+                        }
+                    }
+                }
+            }
+
+            uint FindKeysAvailable(int x, int y, uint keysCollected)
+            {
+                bool[,] visited = new bool[height, width];
+
+                uint RecursiveKeySearch(int xpos, int ypos)
+                {
+                    if (xpos < 0 || xpos >= width || ypos < 0 || ypos >= width)
+                        return 0;
+
+                    // if we've visited or it's a wall
+                    if (visited[ypos, xpos] || maze[ypos, xpos] == 1000)
+                        return 0;
+
+                    // if it's a door we haven't opened
+                    if (maze[ypos, xpos] >= 200 && (keysCollected & (1 << (maze[ypos, xpos] - 200))) == 0)
+                        return 0;
+
+                    // if it's a key we haven't collected
+                    if (maze[ypos, xpos] >= 100 && maze[ypos, xpos] < 200 && (keysCollected & (1 << (maze[ypos, xpos] - 100))) == 0)
+                        return (uint)(1 << (maze[ypos, xpos] - 100));
+
+                    visited[ypos, xpos] = true;
+                    return RecursiveKeySearch(xpos - 1, ypos) |
+                        RecursiveKeySearch(xpos + 1, ypos) |
+                        RecursiveKeySearch(xpos, ypos - 1) |
+                        RecursiveKeySearch(xpos, ypos + 1);
+                }
+
+                return RecursiveKeySearch(currentX, currentY);
+            }
+
+            int FindDistance(int x, int y, int targetX, int targetY, uint keysCollected)
+            {
+                Queue<(int x, int y, int distance)> next = new Queue<(int x, int y, int distance)>();
+                HashSet<(int x, int y)> visited = new HashSet<(int x, int y)>();
+
+                next.Enqueue((x, y, 0));
+
+                void AddNext(int xpos, int ypos, int d)
+                {
+                    // out of bounds
+                    if (xpos < 0 || xpos >= width || ypos < 0 || ypos >= width)
+                        return;
+                    // we've already visited
+                    if (visited.Contains((xpos, ypos)))
+                        return;
+                    // it's a wall
+                    if (maze[ypos, xpos] == 1000)
+                        return;
+                    // it's a door we haven't opened
+                    if (maze[ypos, xpos] >= 200 && (keysCollected & (1 << (maze[ypos, xpos] - 200))) == 0)
+                        return;
+                    // it's a key we haven't collected
+                    if (maze[ypos, xpos] >= 100 && maze[ypos, xpos] < 200 && (keysCollected & (1 << (maze[ypos, xpos] - 100))) == 0)
+                        return;
+                    next.Enqueue((xpos, ypos, d));
+                }
+
+                do
+                {
+                    var current = next.Dequeue();
+                    if (current.x == targetX && current.y == targetY)
+                        return current.distance;
+                    visited.Add((current.x, current.y));
+                    AddNext(current.x - 1, current.y, current.distance + 1);
+                    AddNext(current.x + 1, current.y, current.distance + 1);
+                    AddNext(current.x, current.y + 1, current.distance + 1);
+                    AddNext(current.x, current.y - 1, current.distance + 1);
+                } while (next.Count != 0);
+
+                return -1;
+            }
+
+            {
+                uint keysCollected = 0;
+                uint keysAvailable = FindKeysAvailable(currentX, currentY, keysCollected);
+
+                var result = FindDistance(currentX, currentY, currentX + 11, currentY + 5, keysCollected);
+            }
         }
 
         public static void Day17b()
