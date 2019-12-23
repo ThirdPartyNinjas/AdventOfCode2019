@@ -10,7 +10,213 @@ namespace AdventOfCode2019
     {
         public static void Main(string[] _)
         {
-            Day18a();
+            Day18b();
+        }
+
+        public static void Day18b()
+        {
+            // 0 == open
+            // 100-125 == key
+            // 200-225 == door
+            // 1000 == wall
+            int width, height;
+            int[,] maze;
+
+            int x0 = 39, y0 = 39;
+            int x1 = 41, y1 = 39;
+            int x2 = 39, y2 = 41;
+            int x3 = 41, y3 = 41;
+            int startCount = 0;
+            Dictionary<int, (int x, int y)> keyLocations = new Dictionary<int, (int x, int y)>();
+            Dictionary<int, (int x, int y)> doorLocations = new Dictionary<int, (int x, int y)>();
+
+            using (var file = File.OpenText("Input/day18b.txt"))
+            {
+                string line;
+                List<string> lines = new List<string>();
+                while ((line = file.ReadLine()) != null)
+                {
+                    lines.Add(line);
+                }
+
+                width = lines[0].Length;
+                height = lines.Count;
+                maze = new int[height, width];
+
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        if (lines[y][x] == '@')
+                        {
+                            maze[y, x] = 0;
+                            if(startCount == 0)
+                            {
+                                x0 = x;
+                                y0 = y;
+                            }
+                            else if (startCount == 1)
+                            {
+                                x1 = x;
+                                y1 = y;
+                            }
+                            else if (startCount == 2)
+                            {
+                                x2 = x;
+                                y2 = y;
+                            }
+                            else if (startCount == 3)
+                            {
+                                x3 = x;
+                                y3 = y;
+                            }
+                            startCount++;
+                        }
+                        else if (lines[y][x] == '.')
+                        {
+                            maze[y, x] = 0;
+                        }
+                        else if (lines[y][x] == '#')
+                        {
+                            maze[y, x] = 1000;
+                        }
+                        else if (lines[y][x] >= 'a' && lines[y][x] <= 'z')
+                        {
+                            maze[y, x] = 100 + lines[y][x] - 'a';
+                            keyLocations[maze[y, x] - 100] = (x, y);
+                        }
+                        else if (lines[y][x] >= 'A' && lines[y][x] <= 'Z')
+                        {
+                            maze[y, x] = 200 + lines[y][x] - 'A';
+                            doorLocations[maze[y, x] - 200] = (x, y);
+                        }
+                        else
+                        {
+                            throw new Exception("Unexpected input!");
+                        }
+                    }
+                }
+            }
+
+            uint FindKeysAvailable(uint keysCollected)
+            {
+                bool[,] visited = new bool[height, width];
+
+                uint RecursiveKeySearch(int xpos, int ypos)
+                {
+                    if (xpos < 0 || xpos >= width || ypos < 0 || ypos >= width)
+                        return 0;
+
+                    // if we've visited or it's a wall
+                    if (visited[ypos, xpos] || maze[ypos, xpos] == 1000)
+                        return 0;
+
+                    // if it's a door we haven't opened
+                    if (maze[ypos, xpos] >= 200 && (keysCollected & (1 << (maze[ypos, xpos] - 200))) == 0)
+                        return 0;
+
+                    // if it's a key we haven't collected
+                    if (maze[ypos, xpos] >= 100 && maze[ypos, xpos] < 200 && (keysCollected & (1 << (maze[ypos, xpos] - 100))) == 0)
+                        return (uint)(1 << (maze[ypos, xpos] - 100));
+
+                    visited[ypos, xpos] = true;
+                    return RecursiveKeySearch(xpos - 1, ypos) |
+                        RecursiveKeySearch(xpos + 1, ypos) |
+                        RecursiveKeySearch(xpos, ypos - 1) |
+                        RecursiveKeySearch(xpos, ypos + 1);
+                }
+
+                return RecursiveKeySearch(x0, y0) | RecursiveKeySearch(x1, y1) | RecursiveKeySearch(x2, y2) | RecursiveKeySearch(x3, y3);
+            }
+
+            int FindDistance(int x, int y, int targetX, int targetY, uint keysCollected)
+            {
+                Queue<(int x, int y, int distance)> next = new Queue<(int x, int y, int distance)>();
+                HashSet<(int x, int y)> visited = new HashSet<(int x, int y)>();
+
+                next.Enqueue((x, y, 0));
+
+                void AddNext(int xpos, int ypos, int d)
+                {
+                    // out of bounds
+                    if (xpos < 0 || xpos >= width || ypos < 0 || ypos >= width)
+                        return;
+                    // we've already visited
+                    if (visited.Contains((xpos, ypos)))
+                        return;
+                    // it's a wall
+                    if (maze[ypos, xpos] == 1000)
+                        return;
+                    // it's a door we haven't opened
+                    if (maze[ypos, xpos] >= 200 && (keysCollected & (1 << (maze[ypos, xpos] - 200))) == 0)
+                        return;
+                    // it's a key we haven't collected
+                    if (maze[ypos, xpos] >= 100 && maze[ypos, xpos] < 200 && (keysCollected & (1 << (maze[ypos, xpos] - 100))) == 0)
+                        return;
+                    next.Enqueue((xpos, ypos, d));
+                }
+
+                do
+                {
+                    var current = next.Dequeue();
+                    if (current.x == targetX && current.y == targetY)
+                        return current.distance;
+                    visited.Add((current.x, current.y));
+                    AddNext(current.x - 1, current.y, current.distance + 1);
+                    AddNext(current.x + 1, current.y, current.distance + 1);
+                    AddNext(current.x, current.y + 1, current.distance + 1);
+                    AddNext(current.x, current.y - 1, current.distance + 1);
+                } while (next.Count != 0);
+
+                return -1;
+            }
+
+            Dictionary<(int, int, int, int, int, int, int, int, uint), int> gmdCache = new Dictionary<(int, int, int, int, int, int, int, int, uint), int>();
+
+            int GetMinimumDistance(int dx0, int dy0, int dx1, int dy1, int dx2, int dy2, int dx3, int dy3, uint keysCollected)
+            {
+                if (gmdCache.ContainsKey((dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, keysCollected)))
+                    return gmdCache[(dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, keysCollected)];
+
+                var keysAvailable = FindKeysAvailable(keysCollected);
+                if (keysAvailable == 0)
+                    return 0;
+
+                int minimumDistance = int.MaxValue;
+
+                for (int i = 0; i < 26; i++)
+                {
+                    if ((keysAvailable & (1 << i)) != 0)
+                    {
+                        int distance;
+                        if ((distance = FindDistance(dx0, dy0, keyLocations[i].x, keyLocations[i].y, keysCollected | (1U << i))) != -1)
+                        {
+                            distance += GetMinimumDistance(keyLocations[i].x, keyLocations[i].y, dx1, dy1, dx2, dy2, dx3, dy3, keysCollected | (1U << i));
+                        }
+                        else if ((distance = FindDistance(dx1, dy1, keyLocations[i].x, keyLocations[i].y, keysCollected | (1U << i))) != -1)
+                        {
+                            distance += GetMinimumDistance(dx0, dy0, keyLocations[i].x, keyLocations[i].y, dx2, dy2, dx3, dy3, keysCollected | (1U << i));
+                        }
+                        else if ((distance = FindDistance(dx2, dy2, keyLocations[i].x, keyLocations[i].y, keysCollected | (1U << i))) != -1)
+                        {
+                            distance += GetMinimumDistance(dx0, dy0, dx1, dy1, keyLocations[i].x, keyLocations[i].y, dx3, dy3, keysCollected | (1U << i));
+                        }
+                        else if ((distance = FindDistance(dx3, dy3, keyLocations[i].x, keyLocations[i].y, keysCollected | (1U << i))) != -1)
+                        {
+                            distance += GetMinimumDistance(dx0, dy0, dx1, dy1, dx2, dy2, keyLocations[i].x, keyLocations[i].y, keysCollected | (1U << i));
+                        }
+
+                        if (distance < minimumDistance)
+                            minimumDistance = distance;
+                    }
+                }
+
+                gmdCache[(dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, keysCollected)] = minimumDistance;
+                return minimumDistance;
+            }
+
+            var result = GetMinimumDistance(x0, y0, x1, y1, x2, y2, x3, y3, 0);
+            Console.WriteLine("18b: " + result);
         }
 
         public static void Day18a()
@@ -148,12 +354,37 @@ namespace AdventOfCode2019
                 return -1;
             }
 
-            {
-                uint keysCollected = 0;
-                uint keysAvailable = FindKeysAvailable(currentX, currentY, keysCollected);
+            Dictionary<(int x, int y, uint keysCollected), int> gmdCache = new System.Collections.Generic.Dictionary<(int x, int y, uint keysCollected), int>();
 
-                var result = FindDistance(currentX, currentY, currentX + 11, currentY + 5, keysCollected);
+            int GetMinimumDistance(int x, int y, uint keysCollected)
+            {
+                if (gmdCache.ContainsKey((x, y, keysCollected)))
+                    return gmdCache[(x, y, keysCollected)];
+
+                var keysAvailable = FindKeysAvailable(currentX, currentY, keysCollected);
+                if (keysAvailable == 0)
+                    return 0;
+
+                int minimumDistance = int.MaxValue;
+
+                for(int i=0; i<26; i++)
+                {
+                    if ((keysAvailable & (1 << i)) != 0)
+                    {
+                        var distance = FindDistance(x, y, keyLocations[i].x, keyLocations[i].y, keysCollected | (1U << i));
+                        distance += GetMinimumDistance(keyLocations[i].x, keyLocations[i].y, keysCollected | (1U << i));
+
+                        if (distance < minimumDistance)
+                            minimumDistance = distance;
+                    }
+                }
+
+                gmdCache[(x, y, keysCollected)] = minimumDistance;
+                return minimumDistance;
             }
+
+            var result = GetMinimumDistance(currentX, currentY, 0);
+            Console.WriteLine("18a: " + result);
         }
 
         public static void Day17b()
