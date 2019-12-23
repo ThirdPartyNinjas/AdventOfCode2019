@@ -281,7 +281,7 @@ namespace AdventOfCode2019
                 }
             }
 
-            uint FindKeysAvailable(int x, int y, uint keysCollected)
+            uint FindKeysAvailable(uint keysCollected)
             {
                 bool[,] visited = new bool[height, width];
 
@@ -361,7 +361,7 @@ namespace AdventOfCode2019
                 if (gmdCache.ContainsKey((x, y, keysCollected)))
                     return gmdCache[(x, y, keysCollected)];
 
-                var keysAvailable = FindKeysAvailable(currentX, currentY, keysCollected);
+                var keysAvailable = FindKeysAvailable(keysCollected);
                 if (keysAvailable == 0)
                     return 0;
 
